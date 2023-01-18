@@ -1,0 +1,183 @@
+{% unless script %}
+<link href="//static.rechargecdn.com/static/css/rcWidget.css" rel="stylesheet" type="text/css"/>
+<style>
+    /* Widget: Purchase options */
+label.rc_label {
+  color: #000000;
+}
+div.rc_block__type--active {
+  background-color: #f2f2f2;
+}
+div.rc_block__type--active label.rc_label {
+  color: #000000;
+}
+/* Widget: Popup */
+div.rc_popup__block {
+  z-index: 56;
+}
+div.rc_popup__block:before {
+  border-bottom-color: #424242;
+}
+div.rc_popup__block {
+  background-color: #424242 !important;
+}
+div.rc_popup__close,
+div.rc_popup__block__content,
+div.rc_popup__block__content strong {
+  color: #FFFFFF !important;
+}
+div.rc_popup__block__content a {
+  color: #cfebf4 !important;
+}
+/* ReCharge CSS */
+form[action^="/cart/add"] [type=submit] {
+  visibility: visible !important;
+}
+</style>
+<div id="rc_container" style="display: block;">
+  <input type="hidden" name="properties[shipping_interval_unit_type]" id="rc_shipping_interval_unit_type-8uml70tn8" value="month" disabled="true">
+  <select id="rc_duplicate_selector" aria-hidden="true" class="styled replaced no-js" style="display: none;" name="">    
+    <option value="39313104240826">39313104240826</option>
+  </select>
+  <div id="rc_radio_options" role="radiogroup" aria-labelledby="Purchase options">
+  
+    <div class="rc_block rc_block__type rc_block__type__onetime rc_block__type--active">
+      <input type="radio" id="rc_purchase_type_onetime-q8yh3oo76" name="purchase_type" value="onetime" checked="" class="rc_radio rc_radio__onetime">
+      <label for="rc_purchase_type_onetime-q8yh3oo76" class="rc_label rc_label__onetime">
+        One-time purchase:
+          <span id="rc_price_onetime" class="rc_price rc_price__onetime" aria-label="original price">$187.00</span>
+      </label>
+    </div>
+  
+    <div class="rc_block rc_block__type rc_block__type__autodeliver ">
+      <input type="radio" name="purchase_type" id="rc_purchase_type_autodeliver-czmzj1ycu" value="autodeliver" class="rc_radio rc_radio__autodeliver">
+      
+        <label for="rc_purchase_type_autodeliver-czmzj1ycu" class="rc_label rc_label__autodeliver">
+          Subscribe &amp; Save            
+          <span class="rc_label__discount" aria-label="subscription discount">(19.42%):</span>
+          <span id="rc_price_autodeliver" class="rc_price rc_price__autodeliver" aria-label="recurring price">$150.67</span>
+        </label>
+      
+      <div id="rc_autodeliver_options" class="rc_block rc_block__type__options">
+        <label for="rc_shipping_interval_frequency-e2pjdgdzd" class="rc_label rc_label__deliver_every" aria-label="Subscription frequency options">
+          <span class="rc_label__delivery">Deliver every</span>
+          
+          <select name="properties[shipping_interval_frequency]" id="rc_shipping_interval_frequency-e2pjdgdzd" class="rc_select rc_select__frequency styled replaced" disabled="true">
+            <option value="1">1 month</option>
+            <option value="2">2 months</option>
+            <option value="3">3 monts</option>
+            <option value="4">4 months</option>
+            <option value="5">5 months</option>
+            <option value="6">6 months</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  </div>
+  <div class="rc_popup">
+  
+    <div class="rc_popup__hover">
+      
+      <img src="//static.rechargecdn.com/static/images/widget/rc_widget__icon__black@2x.png" height="21" width="18" alt="ReCharge Subscription services icon" class="rc_popup__icon">
+      Subscription details
+      <div class="rc_popup__block">
+        <div class="rc_popup__block__content">
+          <div class="rc_popup__close" style="display: none;">x</div>
+          <strong>How subscriptions work</strong><br><br>Products are automatically delivered on your schedule. No obligation, modify or cancel your subscription anytime.
+          <br><a href="http://rechargepayments.com/subscribe-with-recharge?utm_source=shopify%20store&amp;utm_medium=customer%20link&amp;utm_campaign=Shopify%20store%20back%20link&amp;shop_name=Apolis&amp;shop=apolisstore.myshopify.com" target="_blank" aria-label="Learn more about ReCharge Payments">Learn more...</a>
+        </div>
+        
+        <div class="rc_popup__block__footer">
+          <a href="http://rechargepayments.com/subscribe-with-recharge?utm_source=shopify%20store&amp;utm_medium=customer%20link&amp;utm_campaign=Shopify%20store%20back%20link&amp;shop_name=Apolis&amp;shop=apolisstore.myshopify.com" target="_blank" aria-label="ReCharge Payments homepage">
+            <img src="//static.rechargecdn.com/static/images/widget/rc_widget__banner@2x.png" height="28" width="153" alt="ReCharge Subscriptions company banner" class="rc_popup__badge">
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<script type="text/javascript">
+  defaultVariants = [];
+  subscriptionVariants = [39513691619514,39313102274746,39506843664570];
+
+  bundleIDs = document.querySelectorAll('[name="id[]"]');
+
+  bundleIDs.forEach(function(ele) {
+    if (typeof(ele) == 'object') {
+      defaultVariants.push(ele.value);
+    }
+  });
+
+  function setIntervalFields(enabled) {
+    document.querySelectorAll('[name="properties[shipping_interval_unit_type]"]').forEach(function(ele){ ele.disabled = !enabled });
+    document.querySelectorAll('[name="properties[shipping_interval_frequency]"]').forEach(function(ele){ ele.disabled = !enabled });
+  }
+
+  document.querySelector('.product-form').addEventListener('submit', function(event) {
+    var autodeliver = document.querySelector('[value="autodeliver"]').checked;
+    if (autodeliver) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      buyIt();
+
+      return false;
+    }
+  });
+
+
+  function buyIt() {
+     if (subscriptionVariants.length) {
+       var id = subscriptionVariants.pop();
+       var quantity = document.querySelector('[name="quantity"]').value;
+       var unit = document.querySelector('[name="properties[shipping_interval_unit_type]"]').value;
+       var frequency = document.querySelector('[name="properties[shipping_interval_frequency]"]').value;
+       multiBuy(id, quantity, unit, frequency);
+    }
+    else {
+      document.location.href = '/cart/';
+    }
+  }
+
+
+  function multiBuy(id, quantity, interval, frequency) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.open("POST", "/cart/add.json", true); 
+    xhttp.setRequestHeader("Content-Type", "application/json");
+    xhttp.onreadystatechange = function() {
+       if (this.readyState == 4 && this.status == 200) {
+         // Response
+         var response = this.responseText;
+         buyIt();
+       }
+    };
+    var data = {'id': id, 'quantity': quantity, 'purchase_type': 'autodeliver', 'properties': {'shipping_interval_unit_type': interval, 'shipping_interval_frequency': frequency}};
+
+    xhttp.send(JSON.stringify(data));
+  }
+
+  document.addEventListener('click', function(event) {
+    if (event.target.value == "autodeliver" || event.target.value == "onetime") {
+      document.querySelectorAll('.rc_block__type').forEach( function(ele) { ele.classList.remove('rc_block__type--active'); });
+      document.querySelector('.rc_block__type__' + event.target.value).classList.add('rc_block__type--active');
+    }
+
+    if (event.target.value == "autodeliver") {
+      setIntervalFields(true);
+      // var i = 0;
+      // bundleIDs.forEach(function(ele) {
+      //   // ele.value = subscriptionVariants[i++];
+      // });
+    }
+    else if (event.target.value == "onetime") {
+      setIntervalFields(false);
+      // var i = 0;
+      // bundleIDs.forEach(function(ele) {
+      //   ele.value = defaultVariants[i++];
+      // });
+    }
+  });
+</script>
+
+{% endunless %}

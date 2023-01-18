@@ -1,0 +1,598 @@
+{%- liquid
+  assign upsell_collection = ""
+  assign upsell_product = ""
+  assign cart_items_string = ""
+  assign has_subscription_product = false
+-%}
+<form method="post" action="/checkout" id="mini-cart" class="mini-cart" aria-hidden="true" novalidate="novalidate" data-item-count="{{ cart.item_count }}">
+  <input type="hidden" name="attributes[collection_products_per_page]" value="">
+  <input type="hidden" name="attributes[collection_layout]" value="">
+
+  {%- render 'icon', icon: 'nav-triangle-borderless' -%}
+
+  {% comment %}{%- capture shipping_alert -%}
+    {%- if settings.cart_show_free_shipping_threshold -%}
+      {%- assign threshold_in_cents = settings.cart_free_shipping_threshold | times: 100 -%}
+
+      {%- if cart.total_price >= threshold_in_cents -%}
+        <p class="alert alert--tight alert--center text--strong">{{ 'cart.general.free_shipping' | t }}</p>
+      {%- else -%}
+        {%- capture remaining_amount -%}<span>{{ cart.total_price | minus: threshold_in_cents | abs | money_without_trailing_zeros }}</span>{%- endcapture -%}
+        <p class="alert alert--tight alert--center text--strong">{{ 'cart.general.free_shipping_remaining_html' | t: remaining_amount: remaining_amount }}</p>
+      {%- endif -%}
+    {%- endif -%}
+  {%- endcapture -%}{% endcomment %}
+
+  {% assign shipping_alert = '<h3 class="h3 heading">Cart</h3>' %}
+
+  {%- if cart.item_count == 0 -%}
+    <div class="mini-cart__content mini-cart__content--empty">
+      {%- if shipping_alert != blank -%}
+        {{- shipping_alert -}}
+      {%- endif -%}
+
+      <div class="mini-cart__empty-state">
+        {%- render 'icon', icon: 'big-cart' -%}
+        <p class="heading h4">{{ 'cart.general.empty' | t }}</p>
+      </div>
+
+      <a href="{{ settings.cart_empty_button_link }}" class="button button--primary button--full">{{ 'cart.general.empty_button' | t }}</a>
+    </div>
+    </form>
+  {%- else -%}
+  <div class="mini-cart__scroller">
+    <div class="mini-cart__inner">
+      {%- if shipping_alert != blank -%}
+        {% comment %}<a href="" aria-controls="mini-cart" aria-expanded="false" data-action="toggle-mini-cart" style="font-size: 40px;position: absolute;right: 10px;top: 10px;padding: 10px;line-height: 0.6;">&times;</a>{% endcomment %}
+
+        <div class="mini-cart__alert-wrapper" style="display: flex; justify-content: space-between">
+          <span class="h3 heading" style="margin-bottom: 0!important">Cart</span> 
+            {%- assign threshold_in_cents = settings.cart_free_shipping_threshold | times: 100 -%}
+
+            <span class="page__description" style="font-size:14px;">
+            
+            {%- if cart.total_price >= threshold_in_cents -%}
+              You qualify for <strong>FREE US SHIPPING!</strong>
+            {%- else %}
+              {%- capture remaining_amount -%}<span>{{ cart.total_price | minus: threshold_in_cents | abs | money_without_trailing_zeros }}</span>{%- endcapture -%}
+              <span class="page__description" style="font-size:14px">{{ 'cart.general.free_shipping_remaining_html' | t: remaining_amount: remaining_amount }}!
+            {%- endif %}
+
+
+           </span>          
+          
+        </div>
+      {%- endif -%}
+      <style type="text/css">
+        [data-handle="GIFTWRAP"] .mini-cart__image-wrapper,
+        [data-handle="RUSH-FULFILLMENT"] .mini-cart__image-wrapper,
+        [data-handle="EMBROIDERY-VIDEO"] .mini-cart__image-wrapper,
+        [data-handle="CALLIGRAPHY-VIDEO"] .mini-cart__image-wrapper {
+          width: 120px;
+          margin-right: 40px;
+        }
+      </style>
+      <div class="mini-cart__content">
+        {%- liquid
+          assign has_upsell_sanitizer = false
+          assign has_upsell_candle = false
+          assign has_upsell_giftwrap = false
+          assign has_upsell_rush = false
+          assign has_upsell_embroidery_video = false
+          assign has_upsell_calligraphy_video = false
+          assign has_nri = false
+
+          comment
+          --------------------------------------------------------------------------------------
+          GIFT WRAP COUNTER AMIT
+          --------------------------------------------------------------------------------------
+          endcomment
+
+          assign total_cart_qty = 0
+          assign total_cart_qty_nri = 0
+          assign total_cart_rush_qty = 0
+          assign total_cart_qty_embroidery = 0
+          assign total_cart_qty_calligraphy = 0
+
+          assign wrap_qty = 0
+          assign wrap_qty_nri = 0
+          assign wrap_key = ''
+          assign wrap_key_nri = ''
+
+          assign rush_qty = 0
+          assign rush_key = ''
+
+          if customer.tags contains "VIPPerks" and customer
+            assign is_vip = true
+          elsif customer.tags contains "VIPBronze" and customer
+            assign is_vip = true
+          elsif customer.tags contains "VIPSilver" and customer
+            assign is_vip = true
+          elsif customer.tags contains "VIPGold" and customer
+            assign is_vip = true
+          else
+            assign is_vip = false
+          endif
+
+          if is_vip
+            assign gift_wrap_product = all_products["apolis-vip-gift-wrap"]
+            assign gift_wrap_product_nri = all_products["apolis-vip-gift-wrap-nri"]
+          else
+            assign gift_wrap_product = all_products["gift-wrap"]
+            assign gift_wrap_product_nri = all_products["gift-wrap-nri"]
+          endif          
+
+          assign valid_for_rush = false
+          assign rush_order_product = all_products["rush-order"]
+
+          assign candle_product = all_products["cypress-fig-candle-with-customizable-text-two-lines"]
+          assign hand_sanitizer_product = all_products["hand-sanitizer-cypress-fig-scent"]
+
+          assign note_tag_product = all_products["leather-gift-tag-with-note"]
+          assign monogram_tag_product = all_products["leather-gift-tag-with-monogram"]
+          assign embroidery_video_product = all_products["your-behind-the-scenes-embroidery-video"]
+          assign calligraphy_video_product = all_products["your-behind-the-scenes-handwritten-calligraphy-video"]
+
+          assign wraps = 0
+          assign wraps_nri = 0
+          for item in cart.items
+            if item.product.tags contains "wrap"
+              if item.vendor == 'NRI'
+                assign wraps_nri = wraps_nri | plus: item.quantity
+              elsif 'BDML003NAANPC,BDML003NAANVG,BDML035NAANPC,BDML035NAANVG' contains item.sku
+                assign wraps_nri = wraps_nri | plus: item.quantity
+              else
+                assign wraps = wraps | plus: item.quantity
+              endif
+               
+            endif
+          endfor
+        -%}
+
+        <div class="mini-cart__line-item-list">
+          {%- for line_item in cart.items -%}
+            
+            {%- liquid
+
+              if has_subscription_product == false
+                 for p in item.properties
+                   if p.first == "shipping_interval_frequency"
+                  		assign has_subscription_product = true
+                  endif
+                endfor
+              endif
+
+              assign cart_items_string = cart_items_string | append: ',' | append: line_item.product.id 
+
+              assign query_string = ""
+
+              for metafield in line_item.product.metafields.customizer_web
+                assign meta_key = metafield | first
+
+                if meta_key == "img_url"
+                	assign meta_val = metafield | last | url_encode
+                else
+                	assign meta_val = metafield | last
+                endif
+
+                if meta_key != "is_para"
+
+                  assign query_string = query_string | append: '&' | append: meta_key | append: '=' | append: meta_val
+                endif
+
+              endfor
+            
+              if upsell_collection == '' and line_item.properties.customization != blank
+                if line_item.product.tags contains "__cross-sell:3-line-format"
+                	assign upsell_collection = "3-line-format"
+                    assign upsell_product = line_item
+                elsif line_item.product.tags contains "__cross-sell:1-letter-format"
+                	assign upsell_collection = "1-letter-format"
+                    assign upsell_product = line_item
+                elsif line_item.product.tags contains "__cross-sell:3-letter-format"
+                	assign upsell_collection = "3-letter-format"
+                    assign upsell_product = line_item
+                endif
+              endif
+
+              if line_item.variant_id == hand_sanitizer_product.selected_or_first_available_variant.id
+                assign has_upsell_sanitizer = true
+              elsif line_item.variant_id == candle_product.selected_or_first_available_variant.id
+                assign has_upsell_candle = true
+              elsif line_item.variant_id == gift_wrap_product.selected_or_first_available_variant.id
+                assign has_upsell_giftwrap = true
+              elsif line_item.variant_id == gift_wrap_product_nri.selected_or_first_available_variant.id
+                assign has_upsell_giftwrap_nri = true
+              elsif line_item.variant_id == rush_order_product.selected_or_first_available_variant.id
+                assign has_upsell_rush = true
+              elsif line_item.variant_id == embroidery_video_product.selected_or_first_available_variant.id
+                assign has_upsell_embroidery_video = true
+              elsif line_item.variant_id == calligraphy_video_product.selected_or_first_available_variant.id
+                assign has_upsell_calligraphy_video = true
+              endif
+
+              if line_item.vendor == "NRI"
+                assign has_nri = true
+              endif
+
+              unless line_item.product.tags contains "No Rush" or line_item.sku == 'RUSH-FULFILLMENT' or line_item.sku == 'GIFTWRAP' or line_item.sku == 'GIFTWRAPNRI'
+                assign total_cart_rush_qty = total_cart_rush_qty | plus: line_item.quantity
+                assign valid_for_rush = true
+              endunless
+
+              if gift_wrap_product.handle == line_item.product.handle
+                assign wrap_qty = wrap_qty | plus: line_item.quantity
+                assign wrap_key = line_item.key
+              endif
+
+              if rush_order_product.handle == line_item.product.handle
+                assign rush_qty = rush_qty | plus: line_item.quantity
+                assign rush_key = line_item.key
+              endif
+
+              unless gift_wrap_product.handle == line_item.product.handle or gift_wrap_product_nri.handle == line_item.product.handle or rush_order_product.handle == line_item.product.handle
+                if line_item.product.tags contains "Embroidery" and line_item.variant.title == "Add Custom Text"
+                  assign total_cart_qty_embroidery = total_cart_qty_embroidery | plus: line_item.quantity
+                elsif line_item.product.tags contains "Calligraphy" and line_item.variant.title == "Add Custom Text"
+                  assign total_cart_qty_calligraphy = total_cart_qty_calligraphy | plus: line_item.quantity
+                elsif line_item.product.vendor == 'NRI'
+                  assign total_cart_qty_nri = total_cart_qty_nri | plus: line_item.quantity
+                elsif 'BDML003NAANPC,BDML003NAANVG,BDML035NAANPC,BDML035NAANVG' contains line_item.sku
+                  assign total_cart_qty_nri = total_cart_qty_nri | plus: line_item.quantity
+                else
+                  assign total_cart_qty = total_cart_qty | plus: line_item.quantity
+                endif
+              endunless
+
+            -%}
+
+            <div class="mini-cart__line-item" data-handle="{{ line_item.sku }}" data-rush="{% if line_item.product.tags contains "No Rush" %}false{% else %}true{% endif %}" data-shipping-standard="{{ line_item.product.metafields.shipping.standard }}" data-shipping-express="{{ line_item.product.metafields.shipping.express }}" data-shipping-fulfillment="{{ line_item.product.metafields.shipping.fulfillment }}">
+              <div class="mini-cart__image-wrapper">
+                {%- comment -%}For vertical images we force to contain them on a square ratio to avoid growing too large{%- endcomment -%}
+
+                {%-if line_item.properties.customization != blank -%}
+
+                  <div class="aspect-ratio aspect-ratio--square">
+                    <img class="cart-item-customized-link" data-product-id="{{line_item.product_id}}" data-customization="{{line_item.properties.customization}}" data-url_params="{{query_string}}" src="{{ line_item.image | img_url: '180x' }}" alt="{{ line_item.image.alt | escape }}" style="opacity: 0;">
+                  </div>
+
+                {%- elsif line_item.image.aspect_ratio < 1 -%}
+                  <div class="aspect-ratio aspect-ratio--square">
+                    <img src="{{ line_item.image | img_url: '180x' }}" alt="{{ line_item.image.alt | escape }}">
+                  </div>
+                {%- else -%}
+                  <div class="aspect-ratio" style="padding-bottom: {{ 100.0 | divided_by: line_item.image.aspect_ratio }}%">
+                    <img src="{{ line_item.image | img_url: '180x' }}" alt="{{ line_item.image.alt | escape }}">
+                  </div>
+                {%- endif -%}
+              </div>
+
+              <div class="mini-cart__item-wrapper">
+                <div class="mini-cart__product-info">
+                  {%- unless line_item.product.tags contains '__gift' -%}
+                    {%- if settings.show_vendor -%}
+                      {%- assign vendor_handle = line_item.product.vendor | handle -%}
+                      {%- assign collection_for_vendor = collections[vendor_handle] -%}
+
+                      {%- unless collection_for_vendor.empty? -%}
+                        <a class="mini-cart__product-vendor link" href="{{ collection_for_vendor.url }}">{{ line_item.product.vendor }}</a>
+                        {%- else -%}
+                        <a class="mini-cart__product-vendor link" href="{{ line_item.product.vendor | url_for_vendor }}">{{ line_item.product.vendor }}</a>
+                      {%- endunless -%}
+                    {%- endif -%}
+                  {%- endunless -%}
+
+                  <a href="{{ line_item.url }}" class="mini-cart__product-title text--strong link">{{ line_item.title }}{% if settings.product_title_append_enabled and line_item.title contains settings.product_title_append_keyword %} ({{ settings.product_title_append_string }}){% endif %}</a>
+
+                  {%- unless line_item.properties == blank -%}
+                    <ul class="mini-cart__property-list">
+                      {%- for property in line_item.properties -%}
+                        {%- assign first_character_in_key = property.first | truncate: 1, '' -%}
+
+                        {%- if property.last == blank or first_character_in_key == '_' -%}
+                          {%- continue -%}
+                        {%- endif -%}
+
+                        <li class="mini-cart__property">
+                        {% unless property.first == "customization" %}
+                          {{ property.first }}:
+                        {% endunless %}
+                          {{ property.last | replace: '| heart', '♥' | replace: '| Heart', '♥' | replace: '| ~heart~', '♥' }}
+                        </li>
+                      {%- endfor -%}
+                    </ul>
+                  {%- endunless -%}
+
+                  {%- comment -%}If we have a Shopify Script, we use the reduced price here, otherwise we check the compare at price{%- endcomment -%}
+
+                 {% comment %}price was here{% endcomment %}
+                 <div class="mini-cart__price-list">
+                    {%- if line_item.final_line_price < line_item.original_line_price -%}
+                      <span class="price price--compare">{{ line_item.original_line_price | money }}</span>
+                      <span class="price price--highlight">{{ line_item.final_line_price | money }}</span>
+                    {%- elsif line_item.variant.compare_at_price > line_item.variant.price -%}
+                      <span class="price price--compare">{{ line_item.variant.compare_at_price | times: line_item.quantity | money }}</span>
+                      <span class="price price--highlight">{{ line_item.final_line_price | money }}</span>
+                    {%- else -%}
+                      <span class="price">{{ line_item.final_line_price | money }}</span>
+                    {%- endif -%}
+                  </div>
+
+                  {%- if line_item.line_level_discount_allocations != blank -%}
+                    <ul class="mini-cart__discount-list">
+                      {%- for discount_allocation in line_item.line_level_discount_allocations -%}
+                        <li class="mini-cart__discount">
+                          {%- render 'icon', icon: 'sale' -%}{{ discount_allocation.discount_application.title }} (-{{ discount_allocation.amount | money }})
+                        </li>
+                      {%- endfor -%}
+                    </ul>
+                  {%- endif -%}
+                </div>
+
+                {%- comment -%}If the product has the tag "__gift", we remove the price{%- endcomment -%}
+
+                <div class="mini-cart__quantity">
+                  {%- unless line_item.product.tags contains '__gift' -%}
+                
+                    {% comment %}<div class="mini-cart__price-list">
+                    {%- if line_item.final_line_price < line_item.original_line_price -%}
+                      <span class="price price--compare">{{ line_item.original_line_price | money }}</span>
+                      <span class="price price--highlight">{{ line_item.final_line_price | money }}</span>
+                    {%- elsif line_item.variant.compare_at_price > line_item.variant.price -%}
+                      <span class="price price--compare">{{ line_item.variant.compare_at_price | times: line_item.quantity | money }}</span>
+                      <span class="price price--highlight">{{ line_item.final_line_price | money }}</span>
+                    {%- else -%}
+                      <span class="price">{{ line_item.final_line_price | money }}</span>
+                    {%- endif -%}
+                  </div>{% endcomment %}
+
+                  {%- if line_item.unit_price_measurement -%}
+                    <div class="mini-cart__price-info">
+                      <div class="unit-price-measurement">
+                        <span class="unit-price-measurement__price">{{ line_item.unit_price | money_without_trailing_zeros }}</span>
+                        <span class="unit-price-measurement__separator">/ </span>
+
+                        {%- if line_item.unit_price_measurement.reference_value != 1 -%}
+                          <span class="unit-price-measurement__reference-value">{{ line_item.unit_price_measurement.reference_value }}</span>
+                        {%- endif -%}
+
+                        <span class="unit-price-measurement__reference-unit">{{ line_item.unit_price_measurement.reference_unit }}</span>
+                      </div>
+                    </div>
+                  {%- endif -%}
+
+
+                    <div class="quantity-selector">
+                      {%- assign allow_to_add_more = true -%}
+
+                      {%- if line_item.variant.inventory_management and line_item.variant.inventory_policy == 'deny' and line_item.quantity == line_item.variant.inventory_quantity -%}
+                        {%- assign allow_to_add_more = false -%}
+                      {%- endif -%}
+
+                      <button class="quantity-selector__button" data-action="decrease-quantity" data-quantity="{{ line_item.quantity | minus: 1 }}" data-line-id="{{ line_item.key }}" aria-label="{{ 'cart.items.decrease_quantity' | t }}" title="{{ 'cart.items.decrease_quantity' | t }}">{% render 'icon', icon: 'minus' %}</button>
+                      <input aria-label="{{ 'product.form.quantity' | t }}" class="quantity-selector__value" pattern="[0-9]*" data-current-value="{{ line_item.quantity }}" data-line-id="{{ line_item.id }}" value="{{ line_item.quantity }}" size="{{ line_item.quantity | append: '' | size | at_least: 2 }}">
+                      <button class="quantity-selector__button" data-action="increase-quantity" data-quantity="{{ line_item.quantity | plus: 1 }}" data-line-id="{{ line_item.key }}" {% if allow_to_add_more %}aria-label="{{ 'cart.items.increase_quantity' | t }}" title="{{ 'cart.items.increase_quantity' | t }}"{% else %}disabled="disabled" aria-label="{{ 'cart.items.no_more_stock' | t }}" data-tooltip="{{ 'cart.items.no_more_stock' | t }}" data-tooltip-position="bottom-left"{% endif %}>{% render 'icon', icon: 'plus' %}</button>
+                    </div>
+
+                  {%- else -%}
+                    {{ line_item.quantity }}
+                  {%- endunless -%}
+
+                  <a href="{{ routes.cart_change_url }}?quantity=0&id={{ line_item.key }}" data-action="decrease-quantity" data-quantity="0" data-line-id="{{ line_item.key }}" class="mini-cart__quantity-remove link">{{ 'cart.items.remove' | t }}</a>
+                </div>
+              </div>
+            </div>
+          {%- endfor -%}
+      
+          {%- if upsell_collection != '' -%}
+          <div class="card">
+            <p class="Xalert heading h4 alert--tight Xalert--center Xtext--strong" style="margin: 0;">Add some fresh styles:</p>
+         
+            <div id="mini-cart-carousel">
+                           
+              {%- for product in collections[upsell_collection].products -%}
+                {%- unless cart_items_string contains product.id -%} 
+
+                  {%- liquid
+                    
+                    for variant in product.variants  
+                      if variant.option1 == "Add Custom Text"
+                     		assign final_variation_url = product.url | append: '?variant=' | append: variant.id
+                        assign final_variant = variant
+                      endif
+                    endfor
+
+                     if final_variant.inventory_quantity == 0
+                             continue
+                      endif
+                    
+                    assign query_string = ""
+
+                    for metafield in product.metafields.customizer_web
+                      assign meta_key = metafield | first
+                    
+                      if meta_key == "img_url"
+                        assign meta_val = metafield | last | url_encode
+                      else
+                        assign meta_val = metafield | last
+                      endif
+                    
+                    if meta_key != "is_para"
+                      assign query_string = query_string | append: '&' | append: meta_key | append: '=' | append: meta_val
+                    endif
+
+                  endfor
+                -%}
+                
+                <div class="mini-cart-carousel-item upsell_customized_item" data-customization="{{upsell_product.properties.customization}}" data-product-url="{{final_variation_url}}" data-url_params="{{query_string}}" >
+                  <div class="mini-cart__image-wrapper">
+                    <div class="aspect-ratio" style="padding-bottom: 100.0%">
+                      <a href="#" data-variant-id="31455270535277" onclick="UpSellAdd2({{final_variant.id}},'{{upsell_product.properties.customization}}');"><img  data-variant-id="31455270535277" src="{{ product.featured_image | img_url: '180x' }}" alt=""></a>
+                    </div>
+                  </div>
+                  <div style="font-size:10px;text-align:center;margin-bottom: 4px;">{{ product.title }}</div>
+                  <div style="font-size:10px;text-align:center;">
+                    <a href="#" class="add_to_cart button button--ternary button--extra-small navigable" data-variant-id="31455270535277" onclick="UpSellAdd2({{final_variant.id}},'{{upsell_product.properties.customization}}');">
+                      Add • {{ final_variant.price | money }}
+                    </a>
+                  </div>
+                  <div style="font-size:10px;text-align:center;margin-top:8px;text-decoration: underline;"> <a href="#" class="change-message">Change message</a></div>
+                </div>
+                {% endunless %}
+              {% endfor %}
+
+            </div>
+
+          </div>
+          {%- endif -%}
+        </div>
+        
+
+        {%- render 'in-cart-upsell' total_cart_qty: total_cart_qty, total_cart_qty_nri: total_cart_qty_nri, total_cart_qty_embroidery: total_cart_qty_embroidery, total_cart_qty_calligraphy: total_cart_qty_calligraphy, has_upsell_sanitizer: has_upsell_sanitizer, has_upsell_candle: has_upsell_candle, wraps: wraps, wraps_nri: wraps_nri, has_upsell_giftwrap: has_upsell_giftwrap, has_upsell_giftwrap_nri: has_upsell_giftwrap_nri, has_upsell_rush: has_upsell_rush, has_upsell_embroidery_video: has_upsell_embroidery_video, has_upsell_calligraphy_video: has_upsell_calligraphy_video, gift_wrap_product: gift_wrap_product, gift_wrap_product_nri: gift_wrap_product_nri, rush_order_product: rush_order_product, candle_product: candle_product, hand_sanitizer_product: hand_sanitizer_product, embroidery_video_product: embroidery_video_product, calligraphy_video_product: calligraphy_video_product, valid_for_rush: valid_for_rush, total_cart_rush_qty: total_cart_rush_qty -%}
+
+      </div>
+
+    <div class="mini-cart__recap">
+
+      {%- if cart.cart_level_discount_applications != blank -%}
+        {%- for discount_application in cart.cart_level_discount_applications -%}
+          <div class="mini-cart__recap-price-line mini-cart__recap-price-line--highlight text--pull">
+            <span>{{ discount_application.title }}</span>
+            <span>-{{ discount_application.total_allocated_amount | money }}</span>
+          </div>
+        {%- endfor -%}
+      {%- endif -%}
+
+      <div class="mini-cart__recap-price-line">
+        <span>{{ 'cart.general.total' | t }}</span>
+        <span>{{ cart.total_price | money }}</span>
+      </div>
+
+      {%- comment -%}To calculate the total discount, we take both into account the Shopify Script (for Plus merchants), but we also add the compare at price{%- endcomment -%}
+
+      {%- liquid
+        assign total_discount = 0
+
+        for line_item in cart.items
+          if line_item.final_line_price < line_item.original_line_price
+            assign total_discount = total_discount | plus: line_item.total_discount
+          elsif line_item.variant.compare_at_price > line_item.variant.price
+            assign line_discount = line_item.variant.compare_at_price | minus: line_item.variant.price | times: line_item.quantity
+            assign total_discount = total_discount | plus: line_discount
+          endif
+        endfor
+      -%}
+
+      {%- if total_discount > 0 -%}
+        {%- capture amount_saved -%}<span>{{ total_discount | money }}</span>{%- endcapture -%}
+        <span class="mini-cart__amount-saved">{{ 'cart.general.amount_saved_html' | t: amount_saved: amount_saved }}</span>
+      {%- endif -%}
+
+      <div class="mini-cart__button-container">
+        <div class="button-group Xbutton-group--loose button-group--fit">
+          {% if has_subscription_product == false%}
+          <a href="/checkout" data-disable-recharge="true" class="button button--featured">{{ 'cart.general.checkout' | t }} • {{ cart.total_price | money }}</a>
+          {% endif %}
+          {%- comment -%}<a href="{{ routes.cart_url }}" class="button button--featured">{{ 'cart.general.checkout' | t }} • {{ cart.total_price | money }}</a>{%- endcomment -%}
+          <a href="{{ routes.cart_url }}" class="button button--primary">View Cart</a>
+        </div>
+      </div>
+
+      {%- if settings.hide_express_checkout_buttons -%}
+        {%- comment -%}
+          By showing the div in the cart but hiding it in CSS, the express checkout buttons are hidden from the first step of the checkout, and
+          are rather deferred to the payment step. This is a hacky trick, but it is often requested by merchants.
+        {%- endcomment -%}
+
+        {%- if additional_checkout_buttons -%}
+          <div class="additional-checkout-buttons" style="display: none !important">
+            {{ content_for_additional_checkout_buttons }}
+          </div>
+        {%- endif -%}
+      {%- endif -%}
+    </div>
+    </form>
+  </div>
+  </div>
+{%- endif -%}
+
+<script type="text/javascript">
+  document.addEventListener("cart:rerendered", (event) => {
+    console.log('theme:loading:end', event, this);
+  });
+</script>
+
+<script type="text/javascript">
+  UpSellAdd2 = function(variant_id, customization) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    let items = [{ id: variant_id, quantity: 1, 	"properties" : {
+        "customization": customization
+      } }];
+    window.jQ.ajax({
+    type: 'POST',
+    url: '/cart/add.js', 
+    data: { items: items }, 
+    dataType: 'json',
+    success: function() { 
+      document.documentElement.dispatchEvent(new CustomEvent('product:added', {
+        bubbles: true,
+        detail: {
+          quantity: 1
+        }
+      }));
+
+      document.querySelector('#InCartUpsell').style.display = 'none';
+
+    }
+  });
+}
+
+UpSellAdd = function(quantity, quantity2) {
+
+  event.preventDefault();
+  event.stopPropagation();
+    
+  const id = event.target.dataset.variant.split(',');
+
+  let items = [{ id: id[0], quantity: quantity }];
+
+  if (id.length > 1 && quantity2) {
+    items.push({id: id[1], quantity: quantity2});
+  }
+
+  console.log('UpSellAdd', id, items, event, this);
+
+  window.jQ.ajax({
+    type: 'POST',
+    url: '/cart/add.js', 
+    data: { items: items }, 
+    dataType: 'json',
+    success: function() { 
+      document.querySelector('#InCartUpsell').dispatchEvent(new CustomEvent('product:added', {
+        bubbles: true,
+        detail: {
+          variant: id,
+          quantity: quantity
+        }
+      } ));
+
+      document.querySelector('#InCartUpsell').style.display = 'none';
+
+      }
+    }
+  );
+}
+
+  button = document.querySelector('#InCartUpsell .button');
+
+  if (button) {
+    button.addEventListener('click', function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      console.log(event.target.value);
+    })
+  }
+</script>

@@ -1,0 +1,1217 @@
+{%- assign selected_variant = product.variants.first -%}
+{%- assign customizer_fields = product.metafields.customizer -%}
+{%- assign shipping = product.metafields.shipping -%}
+
+{% assign tag_products = product.metafields.custom.tag_products.value %}
+{% assign tag_product = false %}
+{% for tag_product in tag_products %}
+	{% assign tag_product = tag_product %}
+{% endfor %}
+
+<div class="card {% if product.media.size > 0 %}card--collapsed{% endif %} {% if template.name == 'product' %}card--sticky{% endif %}">
+  {%- if section.settings.enable_image_zoom -%}
+    <div id="product-zoom-{{ section.id }}" class="product__zoom-wrapper"></div>
+  {%- endif -%}
+
+  <div class="card__section">
+    {% comment %}
+    ------------------------------------------------------------------------------
+    PRODUCT META
+    ------------------------------------------------------------------------------
+    {% endcomment %}
+
+    {%- if section.settings.show_share_buttons -%}
+      {%- capture share_buttons -%}
+        {%- assign share_url = shop.url | append: product.url -%}
+        {%- assign twitter_text = product.title | url_param_escape -%}
+        {%- assign pinterest_description = product.description | strip_html | truncatewords: 15 | url_param_escape -%}
+        {%- assign pinterest_image = product.featured_media | img_url: '1024x' | prepend: 'https:' -%}
+
+        <ul class="social-media__item-list list--unstyled">
+          <li class="social-media__item social-media__item--facebook">
+            <a href="https://www.facebook.com/sharer.php?u={{ share_url }}" target="_blank" rel="noopener" aria-label="{{ 'general.social.facebook_share' | t }}">{%- render 'icon', icon: 'facebook' -%}</a>
+          </li>
+
+          <li class="social-media__item social-media__item--pinterest">
+            <a href="https://pinterest.com/pin/create/button/?url={{ share_url }}{% if pinterest_image != blank %}&media={{ pinterest_image }}{% endif %}&description={{ pinterest_description }}" target="_blank" rel="noopener" aria-label="{{ 'general.social.pinterest_pin' | t }}">{%- render 'icon', icon: 'pinterest' -%}</a>
+          </li>
+
+          <li class="social-media__item social-media__item--twitter">
+            <a href="https://twitter.com/share?{% if twitter_text != blank %}text={{twitter_text}}&{% endif %}url={{ share_url }}" target="_blank" rel="noopener" aria-label="{{ 'general.social.twitter_tweet' | t }}">{%- render 'icon', icon: 'twitter' -%}</a>
+          </li>
+
+          <li class="social-media__item">
+            <a href="mailto:?&subject={{ product.title | escape }}&body={{ share_url }}" aria-label="{{ 'general.social.email_share' | t }}">{% render 'icon', icon: 'email' %}</a>
+          </li>
+        </ul>
+      {%- endcapture -%}
+    {%- endif -%}
+
+  
+   
+    <div class="product-meta" style="margin-top:5px">
+
+      {%- if template.name == 'product' and template != 'product.quick-view' -%}
+      <h2 class="product-meta__title heading h2" id="product_title">
+        <span>{{ product.title }} {% if settings.product_title_append_enabled and product.title contains settings.product_title_append_keyword %}<br/><small>{{ settings.product_title_append_string }}</small>{% endif %}</span>
+        <span class="price-list" id="price--titlerow"><span class="price">{{ selected_variant.price | money_without_trailing_zeros }}</span>  </span>
+      </h2>
+      {%- else -%}
+      <h3 class="product-meta__title heading h2" id="product_title">
+        <a href="{{ product.url }}">{{ product.title }} {% if settings.product_title_append_enabled and product.title contains settings.product_title_append_keyword %}<br/><small>{{ settings.product_title_append_string }}</small>{% endif %}</a>
+      </h3>      
+      {%- endif -%}
+      {%- if section.settings.show_reviews_badge -%}
+      {% render 'okendo-reviews-product-rating-summary', product: product %}
+      {%- endif -%}
+
+      {%- capture product_labels -%}
+        {%- for tag in product.tags -%}
+          {%- if tag contains '__label:' -%}
+            <span class="product-label product-label--custom1">{{ tag | split: '__label:' | last }}</span>
+          {%- endif -%}
+
+          {%- if tag contains '__label1:' -%}
+            <span class="product-label product-label--custom1">{{ tag | split: '__label1:' | last }}</span>
+          {%- endif -%}
+
+          {%- if tag contains '__label2:' -%}
+            <span class="product-label product-label--custom2">{{ tag | split: '__label2:' | last }}</span>
+          {%- endif -%}
+        {%- endfor -%}
+
+        {%- if settings.show_discount -%}
+          {%- assign savings = 0 -%}
+
+          {%- if settings.discount_mode == 'percentage' -%}
+            {%- assign savings = selected_variant.compare_at_price | minus: selected_variant.price | times: 100.0 | divided_by: selected_variant.compare_at_price | round | append: '%' -%}
+          {%- else -%}
+            {%- capture savings -%}<span>{{ selected_variant.compare_at_price | minus: selected_variant.price | money_without_trailing_zeros }}</span>{%- endcapture -%}
+          {%- endif -%}
+
+          <span class="product-label product-label--on-sale" {% unless selected_variant.price < selected_variant.compare_at_price %}style="display: none"{% endunless %}>{{ 'collection.product.discount_html' | t: savings: savings }}</span>
+        {%- endif -%}
+      {%- endcapture -%}
+
+      {%- if product_labels != blank -%}
+        <div class="product-meta__label-list" style="display:none;">
+          {{- product_labels -}}
+        </div>
+      {%- endif -%}
+
+      {% comment %}
+      Review Amit later display none added
+      {% endcomment %} 
+      <table style="width:100%; margin-top: 10px; margin-bottom: 10px;display:none;">
+         <tr>
+            <th style="text-align: left; width: 55px;">
+               <div class="product-form__info-item">
+                 
+                  <div class="product-form__info-content">
+                     <div class="price-list">
+                        {%- if selected_variant.compare_at_price > selected_variant.price -%}
+                        <span class="price price--highlight">{{ selected_variant.price | money_without_trailing_zeros }}</span>
+                        <span class="price price--compare">{{ selected_variant.compare_at_price | money_without_trailing_zeros }}</span>
+                        {%- else -%}
+                        <span class="price" >{{ selected_variant.price | money_without_trailing_zeros }}</span>
+                        {%- endif -%}
+                     </div>
+                     <div class="product-form__price-info" style="display: {% if selected_variant.unit_price_measurement %}block{% else %}none{% endif %}">
+                        <div class="unit-price-measurement">
+                           <span class="unit-price-measurement__price">{{ selected_variant.unit_price | money_without_trailing_zeros }}</span>
+                           <span class="unit-price-measurement__separator">/ </span>
+                           {%- if selected_variant.unit_price_measurement.reference_value != 1 -%}
+                           <span class="unit-price-measurement__reference-value">{{ selected_variant.unit_price_measurement.reference_value }}</span>
+                           {%- endif -%}
+                           <span class="unit-price-measurement__reference-unit">{{ selected_variant.unit_price_measurement.reference_unit }}</span>
+                        </div>
+                     </div>
+                     {%- if section.settings.show_taxes_included -%}
+                     {%- if shop.taxes_included or shop.shipping_policy.body != blank -%}
+                     <p class="product-form__price-info">
+                        {%- if shop.taxes_included -%}
+                        {{ 'product.general.include_taxes' | t }}
+                        {%- endif -%}
+                        {%- if shop.shipping_policy.body != blank -%}
+                        {{ 'product.general.shipping_policy_html' | t: link: shop.shipping_policy.url }}
+                        {%- endif -%}
+                     </p>
+                     {%- endif -%}
+                     {%- endif -%}
+                  </div>
+               </div>
+            </th>
+            {%- unless product.tags contains 'Gift Voucher' -%}
+              <td style="line-height:0.9!important">
+
+                {%- if settings.cart_show_free_shipping_threshold -%}
+                  <span class="price-info"> & USA Free Shipping <span class="money">${{ settings.cart_free_shipping_threshold }}</span>+</span><br>
+                {%- endif -%}
+                
+                {%- if settings.settings.afterpay_enabled -%}
+                  {%- if selected_variant.price > 3500 -%}
+                    <span class="price-info"> Pay over time with <strong>Afterpay</strong></span>
+                  {%- else -%}
+                    <span class="price-info"> Pay in 4 installments over $35 with <strong>Afterpay</strong></span>
+                  {%- endif -%}
+                {%- endif -%}
+
+              </td>
+            {%- endunless -%}
+         </tr>
+      </table>      
+
+
+      {%- if section.settings.show_vendor or section.settings.show_sku and selected_variant.sku != blank -%}
+        <div class="product-meta__reference">
+          {%- if section.settings.show_vendor -%}
+            {%- assign vendor_handle = product.vendor | handle -%}
+            {%- assign collection_for_vendor = collections[vendor_handle] -%}
+
+            {%- unless collection_for_vendor.empty? -%}
+              <a class="product-meta__vendor link link--accented" href="{{ collection_for_vendor.url }}">{{ product.vendor }}</a>
+            {%- else -%}
+              <a class="product-meta__vendor link link--accented" href="{{ product.vendor | url_for_vendor }}">{{ product.vendor }}</a>
+            {%- endunless -%}
+          {%- endif -%}
+
+          {%- if section.settings.show_sku and selectedf_variant.sku != blank -%}
+            <span class="product-meta__sku">
+              {{- 'product.general.sku' | t -}} <span class="product-meta__sku-number">{{ selected_variant.sku }}</span>
+            </span>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
+
+
+      {%- if section.settings.show_share_buttons -%}
+        <div class="product-meta__share-buttons hidden-phone">
+          {{ share_buttons }}
+        </div>
+      {%- endif -%}
+    </div>
+
+    {%- unless product.tags contains 'Gift Voucher' -%}
+      {%- if product.tags contains 'Customizable' -%}      
+        {% assign urgent_message = pages[section.settings.urgent_message_handle] %}
+      {%- else -%}
+        {% assign urgent_message = pages[section.settings.urgent_message_handle_non_customized] %}
+      {%- endif -%}
+      {%- unless urgent_message.empty? -%}
+        {% assign urgent_message = urgent_message.content %}
+      {%- endunless -%}    
+      {%- if shipping['urgent_message'] -%}
+        {% assign urgent_message = shipping['urgent_message'] %}
+      {%- endif -%}
+      {%- unless urgent_message.empty? -%}
+        <div class="product-meta__urgent_message">
+          {{ urgent_message }}
+        </div>
+      {%- endunless -%}
+    {%- endunless -%}
+
+      {%- if product.tags contains 'Customizable' -%}
+        <hr class="card__separator">
+      {%- endif -%}
+
+    {%- if request.page_type == 'index' and section.settings.show_description and product.description != blank and section.settings.description_below_add_to_cart == false -%}
+
+      <div class="product-meta__description rte">
+        {{ product.description | remove: 'data-section-type="product"' }}
+      </div>
+    {%- endif -%}
+
+    {% comment %}
+    ------------------------------------------------------------------------------
+    PRODUCT FORM
+    ------------------------------------------------------------------------------
+    {% endcomment %}
+
+    {%- assign color_label = 'color,colour,couleur,cor,colore,farbe,색,色,カラー,färg,farve' | split: ',' -%}
+
+    {%- form 'product', product, class: 'product-form', data-productid: product.id -%}
+      {%- if product.available %}
+        {%- if product.id == 6608495640762 -%}
+          {% render 'living-collection-subscription' %}  
+        {%- else -%}
+            
+        {%- endif -%}
+      {% endif -%}
+
+      {%- if shipping['urgent_message'] -%}
+        {% assign urgent_message = shipping['urgent_message'] %}
+        <input type="hidden" name="properties[{{ urgent_message | split: ':' | first }}]" value="{{ urgent_message | split: ':' | last }}"/>
+      {%- endif -%}
+
+      {%- unless product.has_only_default_variant -%}
+        <div class="product-form__variants">
+          {%- for option in product.options_with_values -%}
+            {%- assign downcase_option = option.name | downcase -%}
+            {%- capture option_name -%}{{ section.id }}-{{ product.id }}-{{ forloop.index }}{%- endcapture -%}
+
+            {%- assign option_selector_type = 'select' -%}
+
+            {%- if section.settings.color_mode != 'block' and section.settings.color_mode != 'dropdown' and color_label contains downcase_option -%}
+              {%- comment -%}NOTE: even if the merchant is using the mode to display variant images, if ALL variant do not have an associated image, we fallback to color{%- endcomment -%}
+
+              {%- assign has_image_attached_to_all_variants = true -%}
+
+              {%- for variant in product.variants -%}
+                {%- unless variant.image -%}
+                  {%- assign has_image_attached_to_all_variants = false -%}
+                  {%- break -%}
+                {%- endunless -%}
+              {%- endfor -%}
+
+              {%- if section.settings.color_mode == 'color' or has_image_attached_to_all_variants == false -%}
+                {%- assign option_selector_type = 'color' -%}
+              {%- else -%}
+                {%- assign option_selector_type = 'variant' -%}
+              {%- endif -%}
+            {%- else -%}
+              {%- if color_label contains downcase_option -%}
+                {%- if section.settings.color_mode == 'block' -%}
+                  {%- assign option_selector_type = 'block' -%}
+                {%- endif -%}
+              {%- elsif section.settings.selector_mode == 'block' -%}
+                {%- assign option_selector_type = 'block' -%}
+              {%- endif -%}
+            {%- endif -%}
+
+            <div class="product-form__option" data-selector-type="{{ option_selector_type }}">
+              {%- case option_selector_type -%}
+                {%- when 'color' -%}
+                  <span class="product-form__option-name text--strong">{{ option.name }}: <span class="product-form__selected-value">{{ option.selected_value }}</span></span>
+
+                  <div class="color-swatch-list color-swatch-list--large">
+                    {%- for value in option.values -%}
+                      {%- assign downcased_value = value | downcase -%}
+                      {%- capture color_id -%}{{ option_name }}-{{ forloop.index }}{%- endcapture -%}
+
+                      {%- assign color_swatch_name = value | handle | append: '.png' -%}
+                      {%- assign color_swatch_image = images[color_swatch_name] -%}
+
+                      <div class="color-swatch {% if downcased_value == 'white' or downcased_value == 'blanc' %}color-swatch--white{% endif %}">
+                        <input class="color-swatch__radio product-form__single-selector" type="radio" name="{{ option_name }}" id="{{ color_id }}" value="{{ value | escape }}" {% if option.selected_value == value %}checked{% endif %} data-option-position="{{ option.position }}" aria-hidden="true">
+                        <label class="color-swatch__item lazyload" for="{{ color_id }}" {% if color_swatch_image != blank %}data-bg="{{ color_swatch_image | img_url: '64x64' }}"{% else %}style="background-color: {{ value | replace: ' ', '' | downcase }}"{% endif %} title="{{ value | escape }}">{% render 'icon', icon: 'cross-sold-out' %}</label>
+                      </div>
+                    {%- endfor -%}
+                  </div>
+                {%- when 'variant' -%}
+                  <span class="product-form__option-name text--strong">{{ option.name }}: <span class="product-form__selected-value">{{ option.selected_value }}</span></span>
+
+                  <div class="variant-swatch-list">
+                    {%- capture option_name -%}option{{ option.position }}{%- endcapture -%}
+
+                    {%- for value in option.values -%}
+                      {%- capture variant_swatch_id -%}{{ option_name }}-{{ forloop.index }}{%- endcapture -%}
+
+                      {%- for variant in product.variants -%}
+                        {%- if variant[option_name] == value and variant.image -%}
+                          <div class="variant-swatch">
+                            <input class="variant-swatch__radio product-form__single-selector" type="radio" name="{{ option_name }}" id="{{ variant_swatch_id }}" value="{{ value | escape }}" {% if option.selected_value == value %}checked{% endif %} data-option-position="{{ option.position }}">
+
+                            <label class="variant-swatch__item" for="{{ variant_swatch_id }}" title="{{ value | escape }}">
+                              <div class="aspect-ratio" style="padding-bottom: {{ 100.0 | divided_by: variant.image.aspect_ratio }}%">
+                                <img src="{{ variant.image | img_url: '120x' }}" alt="{{ variant.image.alt | escape }}">
+                              </div>
+
+                              {% render 'icon', icon: 'cross-sold-out' %}
+                            </label>
+                          </div>
+
+                          {%- break -%}
+                        {%- endif -%}
+                      {%- endfor -%}
+                    {%- endfor -%}
+                  </div>
+                {%- when 'block' -%}
+              
+                  {%- if product.tags contains 'Customizable' -%}
+
+                    <div class="product-form__option-name">
+                      <div style="position:relative">Customize It </div>
+                    </div>
+                    <p style="font-size:13px; line-height:1.5em;">Print a mix of letters, words, and numbers to make it unmistakably yours.
+                    {% comment %}
+                      Review Amit later display none added
+                     <br>Leave blank to save {{ product.price_max | minus: product.price_min | money_without_trailing_zeros }}. Ships in {{ shipping.fulfillment }} days.
+                    {% endcomment %} 
+                    </p>
+
+                  {% else %}
+                    <hr class="card__separator">
+                    <span class="product-form__option-name" style="text-transform: uppercase;margin-bottom: 0.5em;">
+                      <strong>{{ option.name }}</strong>
+                    </span>
+                  {% endif %}
+
+                     {%- if section.settings.show_inventory_quantity and product.template_suffix != 'pre-order' -%}
+          <div id="product-form__inventory" class="product-form__info-item" >
+            <span class="product-form__info-title text--strong" style="display:none;">{{ 'product.form.inventory' | t }}:</span>
+
+            <div class="product-form__info-content" style="padding-bottom:10px;">
+               
+              
+              {% if product.available %}
+                {%- if selected_variant.available -%}
+                  {%- if selected_variant.inventory_management and selected_variant.inventory_policy == 'deny' and section.settings.low_inventory_threshold > 0 -%}
+                    {%- if selected_variant.inventory_quantity <= section.settings.low_inventory_threshold -%}
+                      <span class="product-form__inventory inventory inventory--low">{{ 'product.form.low_stock_with_quantity_count' | t: count: selected_variant.inventory_quantity }}</span>
+                    {%- else -%}
+                      <span class="product-form__inventory inventory inventory--high">{{ 'product.form.in_stock_with_quantity_count' | t: count: selected_variant.inventory_quantity }}</span>
+                    {%- endif -%}
+                  {%- else -%}
+                    <span class="product-form__inventory inventory inventory--high">{{ 'product.form.in_stock' | t }}</span>
+                  {%- endif -%}
+                {%- else -%}
+                  <span class="product-form__inventory inventory">{{ 'product.form.sold_out' | t }}</span>
+                {%- endif -%}
+              {%- else -%}
+                <span class="product-form__inventory inventory">SOLD OUT</span>
+              {%- endif -%}
+                 
+            
+              
+              {%- for tag in product.tags -%}
+                {%- if tag contains '__stock:' -%}
+                  {%- assign stock_countdown_max = tag | split: '__stock:' | last | times: 1.0 -%}
+                  {%- assign stock_countdown_progress = selected_variant.inventory_quantity | divided_by: stock_countdown_max | times: 100.0 | at_least: 0 | at_most: 100 -%}
+
+                  <span style="display:none"  class="inventory-bar {% if stock_countdown_progress == 0 %}inventory-bar--hidden{% endif %}" data-stock-countdown-max="{{ stock_countdown_max }}">
+                    <span class="inventory-bar__progress" style="width: 100%"></span>
+                  </span>
+                  {%- break -%}
+                {%- endif -%}
+              {%- endfor -%}
+            </div>
+          </div>
+        {%- endif -%}
+                
+                  <div class="block-swatch-list{% unless product.tags contains "Customizable" %} non-customizable{% endunless %}">
+                    {%- for value in option.values -%}
+                     {% if value != "Add Custom Text" %}
+                  
+                    
+                      {%- capture block_swatch_id -%}{{ option_name }}-{{ forloop.index }}{%- endcapture -%}
+
+                      <div class="block-swatch" {% if value == "Select One" %} style="display:none;" {% endif %} >
+                        <input class="block-swatch__radio product-form__single-selector" type="radio" name="{{ option_name }}" id="{{ block_swatch_id }}" value="{{ value | escape }}" {% if option.selected_value == value %}checked{% endif %} data-option-position="{{ option.position }}" aria-hidden="true" {% if value == "Select One" and product.available == false %} Xdisabled="disabled"{% endif %}>
+                         <label class="block-swatch__item" for="{{ block_swatch_id }}" title="{{ value | escape }}">
+                          {% if value == "Add Custom Text" %}
+                            <span class="block-swatch__item-text">{{ value }}</span>
+                            <span class="block-swatch__pricing">Included</span>
+                          {% elsif product.variants.first.sku != "DONOTUSE" %}
+                            <span class="block-swatch__item-text">{{ value }}</span>
+                          {% else %}
+                            <span class="block-swatch__item-text">No Custom Text</span>
+                            <span class="block-swatch__pricing">-{{ product.price_max | minus: product.price_min | money_without_trailing_zeros }}</span>
+                          {% endif %}
+                          
+                        </label>
+                      </div>
+                     {% endif %}
+                    {%- endfor -%}
+                    {%- for value in option.values -%}
+                     {% if value == "Add Custom Text" %}
+                  
+                    
+                      {%- capture block_swatch_id -%}{{ option_name }}-{{ forloop.index }}{%- endcapture -%}
+
+                      <div class="block-swatch" {% if value == "Select One" %} style="display:none;" {% endif %} >
+                        <input class="block-swatch__radio product-form__single-selector" type="radio" name="{{ option_name }}" id="{{ block_swatch_id }}" value="{{ value | escape }}" {% if option.selected_value == value %}checked{% endif %} data-option-position="{{ option.position }}" aria-hidden="true" {% if value == "Select One" and product.available == false %} Xdisabled="disabled"{% endif %}>
+                         <label class="block-swatch__item" for="{{ block_swatch_id }}" title="{{ value | escape }}">
+                          {% if value == "Add Custom Text" %}
+                            <span class="block-swatch__item-text">{{ value }}</span>
+                            <span class="block-swatch__pricing">Included</span>
+                          {% else %}
+                            <span class="block-swatch__item-text">No Custom Text</span>
+                          <span class="block-swatch__pricing">-{{ product.price_max | minus: product.price_min | money_without_trailing_zeros }}</span>
+                          {% endif %}
+                          
+                        </label>
+                      </div>
+                     {% endif %}
+                    {%- endfor -%}
+                    {%- if product.id == 6131038748858 -%}
+                      <script type="text/javascript">
+                        setTimeout( function () {
+                          // if (document.location.search.length == 0)
+                            document.getElementById('product-template-6131038748858-1-3').click();
+                        }, 250);
+                      </script>
+                    {%- endif -%}
+                    {% unless product.available %}
+                      <script type="text/javascript">
+                        setTimeout( function () {
+                          let nct_button = document.querySelector('[value="No Custom Text"]');
+                          if (nct_button) {
+                            nct_button.click();
+                          }
+
+                          let ne_button = document.querySelector('[value="No Embroidery"]')
+                          if (ne_button) {
+                            ne_button.click();
+                          }
+                        }, 250);
+                      </script>
+                    {% endunless %}
+                  </div>
+                  <div id="edit-customization-block" style="display:none; margin-top:10px">
+                   <span id="customized-text"></span> <br /><a href="" id="customize-modal-element" data-action="open-modal" aria-controls="modal-customize-product" style="margin-top: 5px; color: #B80C09;text-decoration:underline">&nbsp;&nbsp;</a>
+                    &nbsp;&nbsp;<a style="cursor:pointer; color: rgb(184, 12, 9);text-decoration:underline " data-action="open-modal" aria-controls="share-modal" id="share-modal-cta" >Save or Share</a>
+                  </div>
+                
+                {%- when 'select' -%}
+                  <label for="{{ option_name }}" class="product-form__option-name text--strong">{{ option.name }}: <span class="product-form__selected-value">{{ option.selected_value }}</span></label>
+
+                  <div class="select-wrapper select-wrapper--primary">
+                    {%- render 'icon', icon: 'arrow-bottom' -%}
+
+                    <select class="product-form__single-selector" name="{{ option_name }}" id="{{ option_name }}" data-option-position="{{ option.position }}">
+                      {%- for value in option.values -%}
+                        <option value="{{ value | escape }}" {% if value == option.selected_value %}selected="selected"{% endif %}>{{ value }}</option>
+                      {%- endfor -%}
+                    </select>
+                  </div>
+              {%- endcase -%}
+            </div>
+          {%- endfor -%}
+
+    {% assign total_fields = customizer_fields['total_fields'] %}
+
+    {% if product.tags contains "Optional Heart" %}
+      {% assign total_fields = total_fields | minus: 1 %}
+    {% endif %}
+   
+    {%- if product.tags contains 'Customizable' -%}
+     
+      {% unless product.tags contains 'Monogram' or total_fields != 3 %}
+
+          <div id="top-phrases-main" class="cart-recap__note" style="display:none;" >
+            <button type="button" class="cart-recap__note-button" data-action="toggle-collapsible" data-collapsible-force-overflow aria-controls="order-note" aria-expanded="false" id="top-phrases-head">
+              💡 Top Trending Phrases
+              <span class="close_icon_arrow">
+                {%- render 'icon', icon: 'arrow-bottom' -%}
+              </span>
+               <span class="close_icon" >
+                {%- render 'icon', icon: 'close' -%}
+              </span>
+            </button>
+
+            <div id="order-note" class="collapsible top-phrases-content" aria-hidden="true">
+              <div class="cart-recap__note-inner">
+                <div id="top-phrase-box-0" >
+                  <p>Looking for inspiration? Select one of these:</p>
+                  {%- liquid
+                  assign phrases =  pages['top-trending-phrases'].content | split: "<li>"
+                  assign count_upsell = 1
+                  for line in phrases offset:1
+                    assign line_text = line | split: "</li>" | first | strip
+                    assign line_data = line_text | split: '"'
+
+                    if line_data.size > 1
+                      assign line_data = line_data[1]
+                    else
+                      assign line_data = line_data.first
+                    endif
+
+                    assign value = count_upsell | modulo:2
+                    assign col_value = value | minus:2
+                    
+                    if count_upsell == 1 or value == 1
+                      echo '<div class="flex-grid">'
+                    endif
+
+                    echo '<div class="product-label product-label--custom-upsell product-phrase col-'
+                    echo col_value
+                    echo  '"><a data-customization-text="'
+                    echo line_data | remove: '(' | remove: ')' | replace: " | ", "|" | trim | escape
+                    echo '" class="product-phrase-text" href="#" onclick="customizePhrase(event)">'
+                    echo line_text | replace: "|", " " | replace: "   ", " "
+                    echo '</a></div>'
+
+                    if count_upsell != 1 and value == 0
+                      echo '</div>'       
+                    endif
+
+                    assign count_upsell = count_upsell | plus: 1
+                  endfor
+                  -%}
+                  
+                </div>
+              </div>
+            </div>
+          </div>
+  
+      {% endunless %}
+    {%- endif -%}
+
+
+          {%- if product.type == "PRODUCT SAMPLE" -%}
+            <label class="product-form__info-title text--strong" for="sampleMessage">Product sample message:</label>
+            <textarea id="sampleMessage" name="properties[Notes]" style="width: 100%;"></textarea>
+          {%- endif -%}
+
+          <div class="no-js product-form__option">
+            <label for="product-select-{{ product.id }}">{{ 'product.form.variant' | t }}</label>
+
+            <div class="select-wrapper select-wrapper--primary">
+              <select id="product-select-{{ product.id }}" name="id" data-productid="{{product.id}}">
+                {%- for variant in product.variants -%}
+                  <option {% if variant == selected_variant %}selected="selected"{% endif %} value="{{ variant.id }}" data-sku="{{ variant.sku }}">{{ variant.title }} - {{ variant.price | money }}</option>
+                {%- endfor -%}
+              </select>
+            </div>
+          </div>
+        </div>
+      {%- elsif product.metafields.product.bundle_items -%}
+        {%- assign bundle_items = product.metafields.product.bundle_items | split: "
+" -%}
+        {%- for bundle_item in bundle_items -%}
+          {%- assign bundle_handle = bundle_item | strip -%}
+          {%- assign bundle_variant = all_products[bundle_handle].selected_or_first_available_variant -%}
+          <input type="hidden" name="id[]" data-sku="{{ bundle_variant.sku }}" value="{{ bundle_variant.id }}">
+        {% endfor %}
+        {%- if product.id == 6608495640762 -%}
+          {% render 'living-collection-subscription' with script: true %}
+        {%- endif -%}
+
+      {%- else -%}
+        <input type="hidden" name="id" data-sku="{{ selected_variant.sku }}" data-productid="{{product.id}}" value="{{ selected_variant.id }}">
+      {%- endunless -%}
+
+      <!-- {%- unless product.tags contains 'Customizable' -%}
+      <hr class="card__separator">
+      {%- endunless -%} -->
+    
+    {% for collection in product.collections %}
+      {% if collection.handle == "all-customizable-products" %}
+        <div class="select-wrapper select-wrapper--small select-wrapper--primary" style="margin-top: -20px; margin-bottom: 10px;font-size: 0.9em;">
+          or <a id="bulk-customizer" href="/pages/bulk-customizer?product_handle={{product.handle}}" style="text-decoration: underline;margin-left: 0em;">Customize for Groups</a>
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    {% unless tag_product == false %}
+
+      <hr class="card__separator">
+
+      {% for variant in tag_product.variants %}
+      
+        {% if variant.option1 == "Add Custom Text" %}
+          {% assign tag_variant = variant %}
+        <input name="tag_variant_id" id="tag_variant_id" type="hidden" value="{{variant.id}}" />
+        {% endif %}
+      {% endfor %}
+      <div>
+        Choose Your Add-ons <br />
+        <div id="customize-product-tag-block">
+          <button  style="width:100%;text-align:left" id="customize-modal-element-tagx" data-action="open-modal" aria-controls="modal-customize-product-tag" >Add a {{tag_product.title}}</button>
+          <span style="position:absolute;right: 45px;">{{ tag_variant.price | money_without_trailing_zeros }}</span>
+        </div>
+      </div>
+      <div id="edit-customization-block-tag" style="display:none; margin-top:10px">
+        <span id="customized-text-tag"></span>
+        <br /><a href="" id="customize-modal-element-tag" data-action="open-modal" aria-controls="modal-customize-product-tag" style="margin-top: 5px; color: #B80C09;text-decoration:underline">&nbsp;&nbsp;</a>
+        &nbsp;&nbsp;<a href="" style="color: #B80C09;text-decoration:underline" id="customize-tag-remove">Remove</a>
+      </div>
+
+    {% endunless %}
+
+      <hr class="card__separator">
+
+      <div class="product-form__info-list">
+
+   
+
+        {%- if product.template_suffix != 'contact' -%}
+          {%- if section.settings.show_quantity_selector -%}
+            <div class="product-form__info-item product-form__info-item--quantity">
+              <label for="{{ section.id }}-{{ product.id }}-quantity" class="product-form__info-title text--strong">{{ 'product.form.quantity' | t }}:</label>
+
+              <div class="product-form__info-content">
+                <div class="select-wrapper select-wrapper--small select-wrapper--primary">
+                  {%- render 'icon', icon: 'arrow-bottom' -%}
+
+                  <select name="quantity" id="{{ section.id }}-{{ product.id }}-quantity" class="product-form__quantity">
+                    {%- for i in (1..10) -%}
+                      <option value="{{ i }}" {% if forloop.first %}selected="selected"{% endif %}>{% if i < 10 %}{{ i }}{% else %}{{ i }}+{% endif %}</option>
+                    {%- endfor -%}
+                  </select>
+
+                </div>
+                
+
+                {% comment %}{%- if product.metafields.custom_fields.wholesale_link -%}
+                  <div class="select-wrapper select-wrapper--small select-wrapper--primary">
+                    <a href="{{ product.metafields.custom_fields.wholesale_link }}" style="text-decoration: underline;margin-left: 2em;font-size: 0.9em;">Buy Wholesale</a>
+                  </div>
+                {%- endif -%}{% endcomment %}
+
+              </div>
+            </div>
+          {%- else -%}
+            <input type="hidden" name="quantity" value="1">
+          {%- endif -%}
+        {%- endif -%}
+      </div>
+        
+      <p id="web-link-block" style="display:none">Customized Text is <span id="web-link"></span></p>
+
+      <input id="customized-words" type="hidden" name="properties[customization]" />
+
+      <div class="product-form__payment-container{%- if section.settings.show_payment_button %} payment-buttons{%- endif -%}">
+        {%- if product.template_suffix != 'contact' -%}
+
+        {% for tag in product.tags %}
+          {% if tag contains "Arriving" %}
+            {% assign pending_release = tag %}
+          {% endif %}
+        {% endfor %}
+
+        {% if product.available and pending_release == blank %}
+          {%- if selected_variant.available -%}
+            {%- if product.template_suffix == 'pre-order' -%}
+             <button type="submit" class="product-form__add-button button button--primary" data-action="add-to-cart">{{ 'product.form.pre_order' | t }}</button>
+            {%- else -%}
+          
+              <button type="submit" class="product-form__add-button button button--primary" data-action="add-to-cart">{{ 'product.form.add_to_cart' | t }}</button>
+          
+              {%- endif -%}
+          {%- else -%}
+          <div class="atc-block">
+            <button  id="customize-modal-element" data-action="open-modal" aria-controls="modal-customize-product" class="sticky-customize button">Change</button>
+            <button type="submit" class="product-form__add-button button button--disabled" disabled>{{ 'product.form.sold_out' | t }}</button>
+          </div>
+        {%- endif -%}
+         {%- elsif pending_release != blank -%}
+          <div class="Xproduct-form__add-button button button--disabled" disabled style="width:calc(100% - 18px);">{{ pending_release }}</div>
+          <style type="text/css">
+            .btn.klaviyo-bis-trigger {
+              display: none !important;
+            }
+          </style>
+         {%- else -%}
+        
+          <button type="submit" class="product-form__add-button button button--disabled" disabled>SOLD OUT</button>
+        {%- endif -%}
+        
+          {%- if section.settings.show_payment_button and pending_release == blank -%}
+            {{ form | payment_button }}
+          {%- endif -%}
+        {%- else -%}
+          <a href="mailto:{{ shop.email }}" class="button button--primary">{{ 'product.form.contact_us' | t }}</a>
+        {%- endif -%}
+      </div>
+     {{ form | payment_terms }}
+    {%- endform -%}
+   
+    <hr class="card__separator">
+
+    {% render 'deliverydate' %}    
+
+    {%- if section.settings.show_share_buttons -%}
+      <div class="product-meta__share-buttons hidden-tablet-and-up">
+        <span class="text--strong">{{ 'product.general.share' | t }}</span>
+        {{ share_buttons }}
+      </div>
+    {%- endif -%}
+  </div>
+
+  {%- if section.settings.show_payment_button and product.selected_or_first_available_variant.available == false -%}
+    <style>
+      #shopify-section-{{ section.id }} .shopify-payment-button {
+        display: none;
+      }
+    </style>
+  {%- endif -%}
+  
+
+  {% comment %}
+  ------------------------------------------------------------------------------
+  Product Data. This must be outputted for all products (including home page).
+
+  IMPORTANT: THIS CODE IS VITAL. DO NOT EDIT IT NOT REMOVE IT. MAKE SURE TO KEEP
+  THE EXACT SAME ATTRIBUTES.
+  ------------------------------------------------------------------------------
+  {% endcomment %}
+
+  <script type="application/json" data-product-json>
+    {
+      "product": {{ product | json }},
+      "options_with_values": {{ product.options_with_values | json }},
+      "selected_variant_id": {{ selected_variant.id }}
+      {%- if section.settings.show_inventory_quantity -%}
+        ,"inventories": {
+          {%- for variant in product.variants -%}
+            {%- if variant.available -%}
+              {%- if variant.inventory_management and variant.inventory_policy == 'deny' and section.settings.low_inventory_threshold > 0 -%}
+                {%- if variant.inventory_quantity <= section.settings.low_inventory_threshold -%}
+                  {%- capture inventory_message -%}{{ 'product.form.low_stock_with_quantity_count' | t: count: variant.inventory_quantity }}{%- endcapture -%}
+                {%- else -%}
+                  {%- capture inventory_message -%}{{ 'product.form.in_stock_with_quantity_count' | t: count: variant.inventory_quantity }}{%- endcapture -%}
+                {%- endif -%}
+              {%- else -%}
+                {%- capture inventory_message -%}{{ 'product.form.in_stock' | t }}{%- endcapture -%}
+              {%- endif -%}
+            {%- else -%}
+              {%- capture inventory_message -%}{{ 'product.form.sold_out' | t }}{%- endcapture -%}
+            {%- endif -%}
+
+            "{{ variant.id }}": {
+              "inventory_management": {{ variant.inventory_management | json }},
+              "inventory_policy": {{ variant.inventory_policy | json }},
+              "inventory_quantity": {{ variant.inventory_quantity | json }},
+              "inventory_message": {{ inventory_message | json }}
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        }
+      {%- endif -%}
+    }
+  </script>
+</div>
+  
+
+{% comment %}
+------------------------------------------------------------------------------
+CUSTOMIZER START
+------------------------------------------------------------------------------
+{% endcomment %}
+
+{% assign char_limit = customizer_fields['character_limit'] | split: "__" %}
+{% assign total_fields = customizer_fields['total_fields'] %}
+
+{% if product.tags contains "Optional Heart" %}
+  {% assign total_fields = total_fields | minus: 1 %}
+{% endif %}
+<div id="share-modal" class="modal" aria-hidden="true">
+   <div class="modal__dialog">
+    <header class="modal__header">
+      <h3 class="modal__title heading h2">Save or Share</h3>
+
+      <button class="modal__close link" data-action="close-modal">{%- render 'icon', icon: 'close' -%}</button>
+    </header>
+      <div class="modal__content modal__content--ios-push" style="min-height: 300px;">
+        
+        <div class="grid">
+            <div class="grid__cell 1/2--tablet-and-up" style="text-align:center;">
+              <p><img style="max-width:100px;" src="https://cdn.shopify.com/s/files/1/0405/7704/0538/files/Apolislogo_135x@2x.png?v=1591548422" /></p>
+              <p style="font-size:16px;line-height:18px;">Save this item and come back to it later.</p>
+              <form id="share-form">
+              
+                <p><input type="text" name="share_email" id="share_email" placeholder="Email Address" class="form__field form__field--text"  /></p>
+                <button type="submit" class="button navigable button--primary"">Continue</button>
+              	  
+              </form> 
+              <div id="share-success-message" style="display:none;font-weight:bold;">Done! Check your email.</div>
+          </div>
+          <div class="grid__cell 1/2--tablet-and-up" style="text-align:center;">
+             <img style="max-width:100%" id="share_image" src="https://cdn.shopify.com/s/files/1/0405/7704/0538/products/Apolis_Natural_MT_01_1200x.jpg?v=1637437241" />
+          </div>
+        </div>
+        
+     </div>
+  </div>
+</div>
+
+<!-- starts here -->
+
+<script>
+  var customizer_fields = {};
+</script>
+
+{% unless tag_product == false %}
+{%- assign tag_customizer_fields = tag_product.metafields.customizer -%}
+{% assign tag_char_limit = tag_customizer_fields['character_limit'] | split: "__" %}
+{% assign tag_total_fields = tag_customizer_fields['total_fields'] %}
+<script>
+   customizer_fields.tag = {{tag_customizer_fields | json}};
+   customizer_fields.tag['customizer_web'] = {{ tag_product.metafields.customizer_web | json }};
+   customizer_fields.tag['customizer_printer'] = {{ tag_product.metafields.customizer_printer | json }};
+
+  console.log(customizer_fields);
+</script>
+{%- endunless -%}
+
+{% assign letter_count = tag_char_limit | first | times: tag_total_fields %}
+
+
+<div id="modal-customize-product-tag" class="modal" aria-hidden="{% if new_form_errored %}false{% else %}true{% endif %}">
+  <div class="modal__dialog modal__customizer" data-total-fields="{{tag_total_fields}}" data-char-limit="{{tag_char_limit | first}}" role="dialog" style="max-height: calc(100%);">
+    <header class="modal__header">
+      <h3 class="modal__title heading h2">Customize It</h3>
+
+      <button class="modal__close link" data-action="close-modal">{%- render 'icon', icon: 'close' -%}</button>
+    </header>
+
+    <div class="modal__content modal__content--ios-push">
+       <p style="margin-bottom:5px;text-align:center;font-size:14px;">Customize with the names of family members, important dates, city slogans, brand names, or even short quotes.</p>
+
+      <div class="section--text-centered">
+
+        <div style="position: relative;">
+         
+          <img id="customized-image-tag" src="{{tag_product.metafields.customizer_web['img_url']}}" style="max-width:220px;"/>
+
+        </div>
+
+        {% assign letter_count = tag_char_limit | first | times: tag_total_fields %}
+        <div class="monogram_title">{% if letter_count == 1 %}Enter a letter{% else %}Enter {{ letter_count }} letters{% endif %}</div>
+
+        {% for i in (1..tag_total_fields) %}
+          {% assign current_char_limit =  tag_char_limit[forloop.index0] %}
+        
+          {% if forloop.first %}
+            <span id="special-char-message-tag" style="max-width: 300px;margin: 0 auto 5px;"></span>
+          {% endif %}
+                                                                                        
+     
+          <div class="form__input-wrapper form__input-wrapper--labelled" style="width: 300px; margin-left: auto; margin-right: auto;">
+
+            {% if tag_product.metafields.customizer_web.is_para == 1 %}
+              <p style="font-size: 0.86em;">Please enter your custom text in the box below</p>
+              <textarea oninput="updateCustomizedImageTag()" name="customize-text-{{i}}-tag" id="customize-text-{{i}}-tag" class="customize-text-tag form__field form__field--textarea is-filled" rows="4" cols="50" maxlength="{{current_char_limit}}"></textarea>
+            {%- else -%}
+              <input type="text" oninput="updateCustomizedImageTag()" name="customize-text-{{i}}-tag" id="tag-customize-text-{{i}}-tag" class="customize-text-tag form__field form__field--text" required="" maxlength="{{current_char_limit}}" >
+              <label for="customize-text-{{i}}-tag" class="form__floating-label">{% if current_char_limit == 1 %}Letter{% else %}Line{% endif %} {{i}}</label>
+            {% endif %}
+
+          </div>
+
+        {% endfor %}
+
+
+        <p style="margin-top: 15px">
+          <button onclick="saveTagCustomization()"  class="button button--primary" data-action="close-modal">Save</button> <img id="image-loader-tag" class="customizer-img-loader" style="display:none;" src="{{ 'loading.gif' | asset_url }}" />
+        </p>
+
+      
+        
+        <p style="font-size: 11px">Customized products are made to order. Please make sure that everything is spelled correctly as printing is permanent.</p>
+
+      </div>
+      
+    </div>
+  </div>
+</div>
+                                  
+<!-- ends here -->
+
+
+
+<div id="modal-customize-product" class="modal" aria-hidden="{% if new_form_errored %}false{% else %}true{% endif %}">
+  <div class="modal__dialog modal__customizer" data-total-fields="{{total_fields}}" data-char-limit="{{char_limit | first}}" role="dialog" style="max-height: calc(100%);">
+    <header class="modal__header">
+      <h3 class="modal__title heading h2">Customize It</h3>
+
+      <button class="modal__close link" data-action="close-modal">{%- render 'icon', icon: 'close' -%}</button>
+    </header>
+
+    <div class="modal__content modal__content--ios-push">
+       <p style="margin-bottom:5px;text-align:center;font-size:14px;">Customize with the names of family members, important dates, city slogans, brand names, or even short quotes.</p>
+
+      <div class="section--text-centered">
+
+        <div style="position: relative;">
+         
+          <img id="customized-image" src="" style="max-width:220px;"/>
+
+          {% if product.tags contains "Embroidery" or product.tags contains "Calligraphy" %}
+            <p class="product-label product-label--custom1 embroidery-message">Our hand {% if product.tags contains "Calligraphy" %}calligraphy{%else %}embroidery{% endif %} is one-of-a-kind. The {% if product.tags contains 'Mask' -%}mask{%- else -%}bag{%- endif %} you receive will look like the example photos on this page{% unless product.tags contains "Monogram" %},&nbsp;not like the font in this preview{% endunless %}.</p>
+            <style type="text/css">
+              .embroidery-message {
+                {% if product.tags contains "Calligraphy" %}
+                bottom: 3%;
+                {% elsif product.tags contains "Monogram" and product.tags contains "Bag Size_02Small" %}
+                bottom: 7%;
+                {% endif %}
+              }
+            </style>
+          {% endif %}
+
+        </div>
+
+        {% assign letter_count = char_limit | first | times: total_fields %}
+        <div class="monogram_title">{% if letter_count == 1 %}Enter a letter{% else %}Enter {{ letter_count }} letters{% endif %}</div>
+
+        {% for i in (1..total_fields) %}
+          {% assign current_char_limit =  char_limit[forloop.index0] %}
+        
+          {% if forloop.first %}
+            <span id="special-char-message" style="max-width: 300px;margin: 0 auto 5px;"></span>
+          {% endif %}
+
+          <div class="form__input-wrapper form__input-wrapper--labelled" style="width: 300px; margin-left: auto; margin-right: auto;">
+
+            {% if product.metafields.customizer_web.is_para == 1 %}
+              <p style="font-size: 0.86em;">Please enter your custom text in the box below</p>
+              <textarea name="customize-text-{{i}}" id="customize-text-{{i}}" class="form__field form__field--textarea is-filled" rows="4" cols="50" maxlength="{{current_char_limit}}"></textarea>
+            {%- else -%}
+              <input type="text" name="customize-text-{{i}}" id="customize-text-{{i}}" class="form__field form__field--text" required="" maxlength="{{current_char_limit}}" >
+              <label for="customize-text-{{i}}" class="form__floating-label">{% if current_char_limit == 1 %}Letter{% else %}Line{% endif %} {{i}}</label>
+            {% endif %}
+
+          </div>
+
+        {% endfor %}
+
+        {% if product.tags contains "Embroidery" and product.tags contains "Optional Heart" %}
+          <div class="form__input-wrapper form__input-wrapper--labelled" style="width: 300px !important; margin-left: auto; margin-right: auto;line-height: 1.2;margin-top: 20px;">
+            <input type="checkbox" name="customize-heart" id="customize-heart" value="~heart~">
+            {%- if product.tags contains "Color_Citrus" %}
+              <label for="customize-heart">Add a white &#9829; at the end of my text.<br/><small><em>Will not show in preview.</em></small></label>
+            {%- else %}
+              <label for="customize-heart">Add a <span style="color: #be1010;">&#9829;</span> at the end of my text.<br/><small><em>Will not show in preview.</em></small></label>
+            {%- endif -%}
+          </div>
+        {% endif %}
+
+        <p style="margin-top: 15px">
+          <button onclick="saveCustomization()"  class="button button--primary" data-action="close-modal">Save</button> <img id="image-loader" class="customizer-img-loader" style="display:none;" src="{{ 'loading.gif' | asset_url }}" />
+        </p>
+
+        {% unless product.tags contains 'Monogram' or total_fields != 3 %}
+
+          <button type="button" class="cart-recap__note-button" data-action="toggle-collapsible" data-collapsible-force-overflow aria-controls="top-phrase-box" aria-expanded="false" id="top-phrases-head">
+            💡 Top Trending Phrases
+            <span class="close_icon_arrow">
+              {%- render 'icon', icon: 'arrow-bottom' -%}
+            </span>
+            <span class="close_icon" >
+              {%- render 'icon', icon: 'close' -%}
+            </span>
+          </button>
+          
+           <div id="top-phrase-box" class="collapsible" aria-hidden="true">
+            <p>Looking for inspiration? Select one of these:</p>
+
+            {%- liquid
+            assign phrases =  pages['top-trending-phrases'].content | split: "<li>"
+            assign count_upsell = 1
+            for line in phrases offset:1
+              assign line_text = line | split: "</li>" | first | strip
+              assign line_data = line_text | split: '"'
+
+              if line_data.size > 1
+                assign line_data = line_data[1]
+              else
+                assign line_data = line_data.first
+              endif
+
+              assign value = count_upsell | modulo:2
+              assign col_value = value | minus:2
+              
+              if count_upsell == 1 or value == 1
+                echo '<div class="flex-grid">'
+              endif
+
+              echo '<div class="product-label product-label--custom-upsell product-phrase col-'
+              echo col_value
+              echo '"><a data-customization-text="'
+              echo line_data | remove: '(' | remove: ')' | replace: " | ", "|" | trim | escape
+              echo '" class="product-phrase-text" href="#" onclick="customizePhrase(event)">'
+              echo line_text | replace: "|", " " | replace: "   ", " "
+              echo '</a></div>'
+
+              if count_upsell != 1 and value == 0
+                echo '</div>'       
+              endif
+
+              assign count_upsell = count_upsell | plus: 1
+            endfor
+            -%}
+          </div>
+
+        {%- endunless -%}
+        
+        <p style="font-size: 11px">Customized products are made to order. Please make sure that everything is spelled correctly as printing is permanent.</p>
+
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<script>
+  var customizer_settings = {{ product.metafields.customizer_web | json }};
+  var customizer_printer_settings = {{ product.metafields.customizer_printer | json }};
+  var query_string = '';
+  var customized_words = [];
+  var printer_img_urls = typeof(customizer_printer_settings.img_url) == 'string' ? customizer_printer_settings.img_url.split('__') : '';
+  var total_fields = {{total_fields | default: 0}};
+  var force_caps = {{customizer_fields['force_caps'] | json}};
+  var force_lower_caps = {{customizer_fields['force_lower_caps'] | json}};
+
+  if (customizer_settings.is_para == 0)
+    delete customizer_settings.is_para;
+
+  if (customizer_printer_settings.is_para == 0)
+    delete customizer_printer_settings.is_para;
+
+  window.printer_customized_url = '';
+  window.printer_final_customized_url = '';
+                                  
+</script>                   
+
+<script src="{{ 'customizer.js' | asset_url }}" defer></script>
+
+{% comment %}
+------------------------------------------------------------------------------
+CUSTOMIZER END
+------------------------------------------------------------------------------
+{% endcomment %}  
+
+{% comment %}
+------------------------------------------------------------------------------
+DISCOUNT TIERS
+------------------------------------------------------------------------------
+{% endcomment %}
+  
+<div id="modal-discounts" class="modal" aria-hidden="true">
+  <div class="modal__dialog" role="dialog">
+    <header class="modal__header">
+       <h3 class="modal__title heading h2">Need a group gift?</h3>
+       <button class="modal__close link" data-action="close-modal">{%- render 'icon', icon: 'close' -%}</button>
+    </header>
+    <div class="modal__content modal__content--ios-push" style="padding-top:0px;">
+       <div>
+          <p style="margin-top:10px;margin-bottom:10px">Have an event or brand that needs tons of bags? Save big by adding more to your cart. Change any item&rsquo;s quantity to the desired threshold and we&rsquo;ll automatically apply the discount. Discounts can be combined across all bags or all masks, even with different customizations, sizes, or colors.</p>
+          <hr class="card__separator">
+          <table width="100%">
+             <tbody>
+                <tr>
+                   <td style="width: 42%;"></td>
+                  <td style="width: 22.147%;"><strong>Bags</strong></td>
+                   <td style="width: 83.853%;"><strong>Masks</strong></td>
+                </tr>
+                {% comment %}<tr>
+                   <td style="width: 42%;">Buy 3</td>
+                   <td style="width: 22.147%;">5%</td>
+                   <td style="width: 83.853%;">4%</td>
+                </tr>
+                <tr>
+                   <td style="width: 42%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>Buy 5</span>
+                   </td>
+                   <td style="width: 22.147%;">11%</td>
+                   <td style="width: 83.853%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>8%</span>
+                   </td>
+                </tr>
+                <tr>
+                   <td style="width: 42%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>Buy 10</span>
+                   </td>
+                   <td style="width: 22.147%;">14%</td>
+                   <td style="width: 83.853%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>13%</span>
+                   </td>
+                </tr>
+                <tr>
+                   <td style="width: 42%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>Buy 20</span>
+                   </td>
+                   <td style="width: 22.147%;">18%</td>
+                   <td style="width: 83.853%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>17%</span>
+                   </td>
+                </tr>
+                <tr>
+                   <td style="width: 42%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>Buy 30</span>
+                   </td>
+                   <td style="width: 22.147%;">20%</td>
+                   <td style="width: 83.853%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>21%</span>
+                   </td>
+                </tr>
+                <tr>
+                   <td style="width: 42%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>Buy 40</span>
+                   </td>
+                   <td style="width: 22.147%;">22%</td>
+                   <td style="width: 83.853%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>25%</span>
+                   </td>
+                </tr>
+                <tr>
+                   <td style="width: 42%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>Buy 50+</span>
+                   </td>
+                   <td style="width: 22.147%;">25%</td>
+                   <td style="width: 83.853%;">
+                      <div>
+                         <meta charset="utf-8" />
+                      </div>
+                      <span>29%</span>
+                   </td>
+                </tr>{% endcomment %}
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 30</span>
+                     </td>
+                     <td style="width: 22.147%;">15%</td>
+                     <td style="width: 83.853%;">
+                        <span>15%</span>
+                     </td>
+                  </tr>
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 40</span>
+                     </td>
+                     <td style="width: 22.147%;">18%</td>
+                     <td style="width: 83.853%;">
+                        <span>18%</span>
+                     </td>
+                  </tr>
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 50+</span>
+                     </td>
+                     <td style="width: 22.147%;">20%</td>
+                     <td style="width: 83.853%;">
+                        <span>20%</span>
+                     </td>
+                  </tr>
+             </tbody>
+          </table>
+          <hr class="card__separator">
+          <p style="margin-top:10px;margin-bottom:10px">For even larger orders, please <a href="/pages/contact-us"><u>contact us</u></a></p>
+       </div>
+    </div>
+  </div>
+</div>

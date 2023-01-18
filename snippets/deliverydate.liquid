@@ -1,0 +1,160 @@
+{% assign shipping = product.metafields.shipping %}
+
+{% assign key = 'from' %}
+{% assign key = 'to' %}
+{% assign key = 'fulfillment' %}
+{% assign key = 'rush' %}
+
+<table class="delivery-details">
+   <tr>
+      {% if product.tags contains 'No Rush' %}
+      <td>
+        {% if product.available %}
+          <p class="delivery-date">
+            <i class="fas fa-check"></i><br>
+            <strong>In Stock</strong>
+          </p>
+          {% if product.vendor == "NRI" %}
+            <p class="delivery-date static">
+              Ships next business day if you order before 11am PST on M-F
+            </p>
+          {% elsif shipping.fulfillment %}
+            <p class="delivery-date">
+              Ships in {{ shipping.fulfillment }} days. {{ shipping.rush }}
+            </p>
+          {% endif %}
+          
+        {% else %}
+          
+          <p class="delivery-date">
+            <i class="fas fa-box-open"></i><br>
+            <strong>Out of Stock</strong>
+          </p>
+          <p class="delivery-date static">
+            Click the buttom above to be notified.
+          </p>
+        {% endif %}
+      </td>
+      {% endif %}
+
+      <td>
+         <p class="delivery-date">  
+            <i class="fas fa-shipping-fast"></i><br>
+            <strong style="Xcolor: #BE1010;🎄 ">
+              Order today, delivers
+           </strong><br>
+            {%- if settings.cart_show_free_shipping_threshold == 'test'-%}
+              <strong style="Xcolor: #BE1010;🎄 ">{% if product.tags contains 'Free Shipping' %}USA Ships Free {% else %}USA Ships Free Over ${{ settings.cart_free_shipping_threshold }}{% endif %}</strong>
+            
+            {%- endif -%}
+         </p>
+         <p class="delivery-date">
+         
+            <span id="fromDate"></span><span id="dateDash">-</span><span id="toDate">Expedited </span> - Free <span class="money">${{ settings.cart_free_shipping_threshold }}</span>+
+            <span id="expeditedShipping">
+            <br /> <span id="fromDate2"></span><span id="dateDash">-</span><span id="toDate2">Expedited </span> - Expedited
+            </span>
+         </p>
+       
+      </td>
+
+      {% unless product.tags contains 'No Rush' %}
+        <td>
+          <p class="delivery-date">  
+           <i class="fas fa-exchange"></i><br>
+           <strong>Free Returns</strong>
+         </p>
+         <p class="delivery-date static">
+            Easy & hassle-free returns,<br />
+           always
+         </p>
+        </td>
+      {% endunless %}
+   </tr>
+
+</table>
+<p class="delivery-date">{{ section.settings.shop_easy_text }}</p>
+{% if shipping.express or shipping.standard %}
+  {{ '//cdnjs.cloudflare.com/ajax/libs/datejs/1.0/date.min.js' | script_tag }}
+  <script>
+    var shipping_express = {{ shipping.express | default: 'null' }};
+    var fromDate = Date.today().addDays({{ shipping.express | plus: shipping.fulfillment }} - 1);
+    if (fromDate.is().saturday() || fromDate.is().sunday()) { 
+      fromDate = fromDate.next().monday();
+    }
+    var toDate = Date.today().addDays({{ shipping.standard | plus: shipping.fulfillment }});
+    if (toDate.is().saturday() || toDate.is().sunday()) { 
+      toDate = toDate.next().monday(); 
+    }
+    var fromDate2 = Date.today().addDays(2);
+    if (fromDate2.is().saturday() || fromDate2.is().sunday()) { 
+      fromDate2 = fromDate2.next().monday();
+    }
+    var toDate2 = Date.today().addDays(3);
+    if (toDate2.is().saturday() || toDate2.is().sunday()) { 
+      toDate2 = toDate2.next().monday(); 
+    }
+     document.getElementById('fromDate2').innerHTML = fromDate2.toString('MMM dd');
+     document.getElementById('toDate2').innerHTML = toDate2.toString('MMM dd');
+    console.log('shipping dates - from to', fromDate, toDate);
+    if (shipping_express) {
+      document.getElementById('fromDate').innerHTML = fromDate.toString('MMM dd');
+    } else {
+      document.getElementById('dateDash').innerHTML = ' approx. ';
+    }
+    document.getElementById('toDate').innerHTML = toDate.toString('MMM dd');
+    {% if product.tags contains "No Rush" %}
+      document.getElementById('expeditedShipping').style.display = 'none';
+    {% endif %}
+  </script>
+  {% comment %}{% unless product.tags contains "No Rush" %}
+    <script>
+      var shipping_standard = {{ shipping.standard | default: 'null' }};
+      var shipping_express = {{ shipping.express | default: 'null' }};
+      var shipping_fulfillment = {{ shipping.fulfillment | default: 'null' }};
+      var shipping_rush = 1;
+
+      function getDeliveryDay(timeSpan) {
+        var deliveryDate = Date.today().addDays(timeSpan);
+        if (deliveryDate.is().saturday() || deliveryDate.is().sunday()) {
+          deliveryDate = deliveryDate.next().monday();
+        }
+        return deliveryDate;
+      }
+
+      var fromDayGround = getDeliveryDay(shipping_rush + shipping_standard - 4);
+      console.log('dd fromDayGround', fromDayGround.toString('MMM dd'), shipping_rush + shipping_standard - 4);
+      var toDayGround = getDeliveryDay(shipping_rush + shipping_standard - 2);
+      console.log('dd toDayGround', toDayGround.toString('MMM dd'), shipping_rush + shipping_standard - 2);
+
+      var fromDayExpress = getDeliveryDay(shipping_rush + shipping_express - 2);
+      var toDayExpress = getDeliveryDay(shipping_rush + shipping_express);
+
+      console.log('rush ground shipping dates - from to', fromDayGround, toDayGround);
+      console.log('rush express shipping dates - from to', fromDayExpress, toDayExpress);
+
+      if (shipping_standard) {
+        document.getElementById('fromDayGround').innerHTML = fromDayGround.toString('MMM dd');
+        document.getElementById('toDayGround').innerHTML = toDayGround.toString('MMM dd');
+      } else {
+        document.getElementById('rushGround').innerHTML = '';
+        document.getElementById('rushExpressTitle').innerHTML = 'UPS expedited shipping delivers';
+      }
+
+      if (shipping_express) {
+        document.getElementById('fromDayExpress').innerHTML = fromDayExpress.toString('MMM dd');
+        document.getElementById('toDayExpress').innerHTML = toDayExpress.toString('MMM dd');
+      } else {
+        document.getElementById('rushExpress').innerHTML = '';
+      }
+    </script>
+    <script type="text/javascript">
+    </script>
+  {% endunless %}{% endcomment %}
+{% else %}
+  <style type="text/css">
+    .delivery-date:not(.static):last-child {
+      display: none;
+    }
+  </style>
+{% endif %}

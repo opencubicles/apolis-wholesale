@@ -1,0 +1,74 @@
+  
+
+<p style="text-align: left; margin-bottom: 0px!important" class="h4 heading">Shop Easy with Apolis</p>
+  
+<p class="delivery-date">Gift wrapping, group gift discounts, and expedited fulfillment and shipping options available in cart. Skip the cart by using the express checkout button above.</p>
+
+<table style="width:100%; margin:15px 0px 15px 0px; ">
+   <tr>
+      <td  style="width: 50%; padding: 10px">
+         <p class="delivery-date">  
+           <i style="font-size:16px" class="fas fa-check"></i><br>
+           <strong>In Stock</strong>
+         </p>
+         <p class="delivery-date">
+            Ships in 3 days.<br>
+            Rush ordering available.
+         </p>
+      </td>     
+      <td  style="width: 50%; padding: 10px">
+         <p class="delivery-date">  
+            <i style="font-size:16px" class="fas fa-shipping-fast"></i><br>
+            {%- if settings.cart_show_free_shipping_threshold -%}
+            <strong>{% if product.tags contains 'Free Shipping' %}USA Ships Free {% else %}USA Ships Free Over ${{ settings.cart_free_shipping_threshold }}{% endif %}</strong>
+            {%- endif -%}
+         </p>
+         <p class="delivery-date">
+            Delivers <span id="fromDate"></span> - <span id="toDate"></span>.<br>
+           Expedited shipping available.
+         </p>
+      </td>
+   </tr>
+   <tr>
+      <td  style="width: 50%; padding: 10px">
+         <p class="delivery-date">  
+           <i style="font-size:16px" class="far fa-laugh-wink"></i><br> 
+           <strong>Happiness Guaranteed</strong>
+         </p>
+         <p class="delivery-date">
+            Love it, or your money back.
+         </p>
+      </td>
+      <td  style="width: 50%; padding: 10px">
+         <p class="delivery-date">  
+           <i style="font-size:16px" class="fas fa-exchange"></i><br>
+           <strong>Free Returns</strong>
+         </p>
+         <p class="delivery-date">
+            Easy & hassle-free.
+         </p>
+      </td>
+   </tr>  
+  
+</table>
+
+
+
+
+{{ '//cdnjs.cloudflare.com/ajax/libs/datejs/1.0/date.min.js' | script_tag }}
+
+<script>
+  var fromDate = Date.today().addDays(5);
+  if (fromDate.is().saturday() || fromDate.is().sunday()) { 
+    fromDate = fromDate.next().monday();
+  }
+  var toDate = Date.today().addDays(10);
+  if (toDate.is().saturday() || toDate.is().sunday()) { 
+    toDate = toDate.next().monday(); 
+  }
+ 
+  
+  document.getElementById('fromDate').innerHTML = fromDate.toString('MMM dd');
+  document.getElementById('toDate').innerHTML = toDate.toString('MMM dd');
+
+</script>

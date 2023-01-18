@@ -1,0 +1,391 @@
+<!doctype html>
+
+<html class="no-js" lang="{{ request.locale.iso_code }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, height=device-height, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="theme-color" content="{{ settings.accent_color }}">
+    <meta name="facebook-domain-verification" content="k3xboe5y3rxehy9ztnsd6qjjo8hqhf" />
+    <meta name="p:domain_verify" content="0ffc58302007d02d6ae0b0641cb4ca6a"/>
+
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-WVS5JBQ');</script>
+<!-- End Google Tag Manager -->
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DN4KMVWZBG"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-DN4KMVWZBG');
+</script>
+
+    
+    {%- capture seo_page_title -%}
+      {%- if request.page_type == 'search' and search.terms != blank -%}
+        {{ search.terms | split: ' AND ' | last }} - {{ shop.name }}
+      {%- else -%}
+        {{ page_title }}{% if current_tags %}{% assign meta_tags = current_tags | join: ', ' %} &ndash; {{ 'general.meta.tags' | t: tags: meta_tags }}{% endif %}{% if current_page != 1 %} &ndash; {{ 'general.meta.page' | t: page: current_page }}{% endif %}
+      {%- endif -%}
+    {%- endcapture -%}
+
+    <title>{{- seo_page_title -}}</title>
+
+    {%- if page_description -%}
+      <meta name="description" content="{{ page_description | escape }}">
+    {%- endif -%}
+
+    <link rel="canonical" href="{{ canonical_url }}">
+
+    {%- if settings.favicon -%}
+      <link rel="shortcut icon" href="{{ settings.favicon | img_url: '96x96' }}" type="image/png">
+    {%- endif -%}
+
+    <script type="text/javascript" src="{{ 'jquery-3.6.0.min.js' | asset_url }}"></script>
+    <script type="text/javascript">
+      window.jQuery = jQuery;
+      window.jQ = jQuery;
+      var customizer_base_url = "https://tuvd1ov9o6.execute-api.us-west-1.amazonaws.com/customizer/customizer-prod?";
+    </script>
+
+    <!-- Google Optimize -->
+    <script src="https://www.googleoptimize.com/optimize.js?id=OPT-PG67JZH"></script>
+
+    {%- comment -%}Few prefech to increase performance on commonly used third-parties{%- endcomment -%}
+    <link rel="preload" as="style" href="{{ 'theme.css' | asset_url }}">
+    <link rel="preconnect" href="https://cdn.shopify.com">
+    <link rel="preconnect" href="https://fonts.shopifycdn.com">
+    <link rel="dns-prefetch" href="https://productreviews.shopifycdn.com">
+    <link rel="dns-prefetch" href="https://ajax.googleapis.com">
+    <link rel="dns-prefetch" href="https://maps.googleapis.com">
+    <link rel="dns-prefetch" href="https://maps.gstatic.com">
+
+    {% render 'social-meta-tags' %}
+    {% render 'css-variables' %}
+
+    {{ content_for_header }}
+    
+    <link rel="stylesheet" href="{{ 'theme.css' | asset_url }}">
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+
+    {% render 'microdata-schema' %}
+
+    <script src="https://kit.fontawesome.com/f638615b03.js" crossorigin="anonymous"></script>
+
+    <script>
+      // This allows to expose several variables to the global scope, to be used in scripts
+      window.theme = {
+        pageType: {{ request.page_type | json }},
+        cartCount: {{ cart.item_count | json }},
+        moneyFormat: {{ shop.money_format | json }},
+        moneyWithCurrencyFormat: {{ shop.money_with_currency_format | json }},
+        showDiscount: {% if settings.show_discount %}true{% else %}false{% endif %},
+        discountMode: {{ settings.discount_mode | json }},
+        searchMode: {{ settings.search_mode | json }},
+        cartType: {{ settings.cart_type | json }}
+      };
+
+      window.routes = {
+        rootUrl: {{ routes.root_url | json }},
+        cartUrl: {{ routes.cart_url | json }},
+        cartAddUrl: {{ routes.cart_add_url | json }},
+        cartChangeUrl: {{ routes.cart_change_url | json }},
+        searchUrl: {{ routes.search_url | json }},
+        productRecommendationsUrl: {{ routes.product_recommendations_url | json }}
+      };
+
+      window.languages = {
+        collectionOnSaleLabel: {{ 'collection.product.discount_html' | t | json }},
+        productFormUnavailable: {{ 'product.form.unavailable' | t | json }},
+        productFormAddToCart: {% if product.template_suffix == 'pre-order' %}{{ 'product.form.pre_order' | t | json }}{% else %}{{ 'product.form.add_to_cart' | t | json }}{% endif %},
+        productFormSoldOut: {{ 'product.form.sold_out' | t | json }},
+        shippingEstimatorNoResults: {{ 'cart.shipping_estimator.no_results_title' | t | json }},
+        shippingEstimatorOneResult: {{ 'cart.shipping_estimator.one_result_title' | t | json }},
+        shippingEstimatorMultipleResults: {{ 'cart.shipping_estimator.multiple_results_title' | t | json }},
+        shippingEstimatorErrors: {{ 'cart.shipping_estimator.errors' | t | json }}
+      };
+
+      window.lazySizesConfig = {
+        loadHidden: false,
+        hFac: 0.8,
+        expFactor: 3,
+        customMedia: {
+          '--phone': '(max-width: 640px)',
+          '--tablet': '(min-width: 641px) and (max-width: 1023px)',
+          '--lap': '(min-width: 1024px)'
+        }
+      };
+
+      document.documentElement.className = document.documentElement.className.replace('no-js', 'js');
+    </script>
+
+    {%- if request.page_type == 'customers/addresses' -%}
+      <script src="{{ 'shopify_common.js' | shopify_asset_url }}" defer></script>
+      <script src="{{ 'customer_area.js' | shopify_asset_url }}" defer></script>
+    {%- endif -%}
+
+    <script src="//cdn.polyfill.io/v3/polyfill.min.js?unknown=polyfill&features=fetch,Element.prototype.closest,Element.prototype.matches,Element.prototype.remove,Element.prototype.classList,Array.prototype.includes,Array.prototype.fill,String.prototype.includes,String.prototype.padStart,Object.assign,CustomEvent,Intl,URL,DOMTokenList,IntersectionObserver,IntersectionObserverEntry" defer></script>
+    <script src="{{ 'theme.js' | asset_url }}" defer></script>
+    <script src="{{ 'custom.js' | asset_url }}" defer></script>
+
+    <script>
+      (function () {
+        window.onpageshow = function() {
+          // We force re-freshing the cart content onpageshow, as most browsers will serve a cache copy when hitting the
+          // back button, which cause staled data
+          document.documentElement.dispatchEvent(new CustomEvent('cart:refresh', {
+            bubbles: true,
+            detail: {scrollToTop: false}
+          }));
+        };
+      })();
+    </script>
+    {{ shop.metafields.okendo.ReviewsWidgetStyleTag }}
+    {{ shop.metafields.okendo.StyleCustomizations }}
+    <script>
+      window['_fs_debug'] = false;
+      window['_fs_host'] = 'fullstory.com';
+      window['_fs_script'] = 'edge.fullstory.com/s/fs.js';
+      window['_fs_org'] = '{{ settings.fullstory_pixel_id }}';
+      window['_fs_namespace'] = 'FS';
+      (function(m,n,e,t,l,o,g,y){
+        if (e in m) {if(m.console && m.console.log) { m.console.log('FullStory namespace conflict. Please set window["_fs_namespace"].');} return;}
+        g=m[e]=function(a,b,s){g.q?g.q.push([a,b,s]):g._api(a,b,s);};g.q=[];
+        o=n.createElement(t);o.async=1;o.crossOrigin='anonymous';o.src='https://'+_fs_script;
+        y=n.getElementsByTagName(t)[0];y.parentNode.insertBefore(o,y);
+        g.identify=function(i,v,s){g(l,{uid:i},s);if(v)g(l,v,s)};g.setUserVars=function(v,s){g(l,v,s)};g.event=function(i,v,s){g('event',{n:i,p:v},s)};
+        g.anonymize=function(){g.identify(!!0)};
+        g.shutdown=function(){g("rec",!1)};g.restart=function(){g("rec",!0)};
+        g.log = function(a,b){g("log",[a,b])};
+        g.consent=function(a){g("consent",!arguments.length||a)};
+        g.identifyAccount=function(i,v){o='account';v=v||{};v.acctId=i;g(o,v)};
+        g.clearUserCookie=function(){};
+        g.setVars=function(n, p){g('setVars',[n,p]);};
+        g._w={};y='XMLHttpRequest';g._w[y]=m[y];y='fetch';g._w[y]=m[y];
+        if(m[y])m[y]=function(){return g._w[y].apply(this,arguments)};
+        g._v="1.3.0";
+      })(window,document,window['_fs_namespace'],'script','user');
+    </script>
+  {% unless settings.clarity_pixel_id == empty %}
+    <script type="text/javascript">
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", {{ settings.clarity_pixel_id | json }});
+    </script>
+  {% endunless %}
+    <script>
+    window.mlvedaShopCurrency = "{{ shop.currency }}";
+    window.shopCurrency = "{{ shop.currency }}";
+    window.supported_currencies = "{{ settings.mlvedaACS_supportedCurrencies }}";
+    </script>
+
+    <!-- Global site tag (gtag.js) - Google AdWords: 779025436 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-779025436"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'AW-779025436');
+    </script>
+  {% render 'minmaxify-head' %}
+</head>
+
+  <body class="warehouse--v1 {% if settings.animation_image_zoom %}features--animate-zoom{% endif%} template-{{ request.page_type | handle }} {% if request.page_type contains '/' %}template-{{ request.page_type | split: '/' | last | handle }}{% endif %}" data-instant-intensity="viewport">
+    <span class="loading-bar"></span>
+
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WVS5JBQ"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    {% section 'announcement-bar' %}
+
+    {%- unless request.page_type == 'cart' -%}
+      {%- comment -%}As required by Shopify rules, popup must be removed on cart page to remove distraction{%- endcomment -%}
+      {% section 'popups' %}
+    {%- endunless -%}
+
+    {% section 'header' %}
+
+    <main id="main" role="main">
+      {{ content_for_layout }}
+    </main>
+
+    {%- if request.page_type == 'blog' or request.page_type == 'article' or request.page_type == 'page' -%}
+      {% section 'static-newsletter' %}
+    {%- endif -%}
+
+    {% section 'text-with-icons' %}
+    {% section 'footer' %}
+    
+    {% render 'afterpay' %}
+  
+    {% comment %}<script type="text/javascript" src="//static.rechargecdn.com/static/js/recharge.js?shop=apolisstore.myshopify.com"></script>{% endcomment %}
+
+    {% capture subscription_theme_footer_content %}{% render 'subscription-theme-footer' %}{% endcapture %}
+    {% unless subscription_theme_footer_content contains "Liquid error" %}
+      {{ subscription_theme_footer_content }}
+    {% endunless %}
+    
+    {% render 'klaviyo' %}
+
+    <script>
+      loadPreview = function () {
+        var cart_items_customized_link = document.getElementsByClassName(
+          "cart-item-customized-link"
+        );
+
+        for (var i = 0; i < cart_items_customized_link.length; i++) {
+          var cart_item_customized_link = cart_items_customized_link[i];
+          var customization_words =
+            cart_item_customized_link.getAttribute("data-customization");
+          var final_customization_words = customization_words.replaceAll("Your text: ", "").replaceAll(" | ", "__");
+          
+          var customization_params =
+            cart_item_customized_link.getAttribute("data-url_params");
+          
+          var final_img_url =
+            customizer_base_url +
+            customization_params.substring(1) +
+            "&words=" +
+            btoa(unescape(encodeURIComponent(final_customization_words)));
+
+          var product_id = cart_item_customized_link.getAttribute("data-product-id");
+
+          if (product_id == 6611164528826) product_id = 6606176813242;
+          else if (product_id == 6611237372090) product_id = 6611228098746;
+
+          cart_item_customized_link.src = final_img_url;
+          cart_item_customized_link.dataset.src = final_img_url;
+          cart_item_customized_link.style.opacity = 1;
+        }
+        var upsell_customized_items = document.getElementsByClassName(
+          "upsell_customized_item"
+        );
+
+        var customized_words = "hello";
+
+        for (var i = 0; i < upsell_customized_items.length; i++) {
+          var upsell_customized_item = upsell_customized_items[i];
+            var customization_words =
+            upsell_customized_item.getAttribute("data-customization");
+          var final_customization_words = customization_words.replaceAll("Your text: ", "").replaceAll(" | ", "__");
+
+
+          var customization_params =
+            upsell_customized_item.getAttribute("data-url_params");
+          var product_url =
+            upsell_customized_item.getAttribute("data-product-url") +
+            "&customization_text=" + final_customization_words;
+          var upsell_customized_img = upsell_customized_item.querySelector("img");
+          var upsell_customized_link = upsell_customized_item.querySelector(".change-message");
+          
+         
+                var final_img_url =
+            customizer_base_url +
+            customization_params.substring(1) +
+            "&words=" +
+            btoa(unescape(encodeURIComponent(final_customization_words)));
+
+
+          upsell_customized_img.src = final_img_url;
+          upsell_customized_img.dataset.src = final_img_url;
+          upsell_customized_img.style.opacity = 1;
+
+          upsell_customized_link.href = product_url;
+        }
+      };
+    </script>
+    
+    {% include 'mlveda-currencies-switcher' %}{% include 'mlveda-currencies' %}{% include 'mlveda-flag' %}{% include 'mlveda-currencies-style' %}
+
+    <script>
+      window.addEventListener('load', function() {
+        let button = document.querySelector('[data-action="add-to-cart"]');
+        if (button) {
+          button.addEventListener('click', function() {
+            gtag('event', 'conversion', {'send_to': 'AW-779025436/0M9WCLrC_cICEJz4u_MC'});
+          })
+        }
+      })
+    </script>
+
+{{ '//cdnjs.cloudflare.com/ajax/libs/datejs/1.0/date.min.js' | script_tag }}
+<script type="text/javascript">
+
+  function updateRushDays() {
+    let lineItems = Array.from(document.querySelectorAll('[data-rush="true"]'));
+
+    let shippingMax = lineItems.reduce((previousValue, currentValue) => { 
+      previousValue.shippingStandard = parseInt(currentValue.dataset.shippingStandard > previousValue.shippingStandard ? currentValue.dataset.shippingStandard : previousValue.shippingStandard);
+      previousValue.shippingExpress = parseInt(currentValue.dataset.shippingExpress > previousValue.shippingExpress ? currentValue.dataset.shippingExpress : previousValue.shippingExpress);
+      previousValue.shippingFulfillment = parseInt(currentValue.dataset.shippingFulfillment > previousValue.shippingFulfillment ? currentValue.dataset.shippingFulfillment : previousValue.shippingFulfillment);
+
+      return previousValue;
+
+     }, { shippingStandard: 0, shippingExpress: 0, shippingFulfillment: 0 } );
+
+    return shippingMax;
+  }
+
+  function addRushDays(shippingMax) {
+    let shippingNote = document.getElementById('rushMessage');
+
+    if (shippingNote) {
+      let shipping_standard = shippingMax.shippingStandard;
+      let shipping_express = shippingMax.shippingExpress;
+      let shipping_fulfillment = shippingMax.shippingFulfillment;
+      let shipping_rush = 1;
+
+      function getDeliveryDay(timeSpan) {
+        let deliveryDate = Date.today().addDays(timeSpan);
+        if (deliveryDate.is().saturday() || deliveryDate.is().sunday()) {
+          deliveryDate = deliveryDate.next().monday();
+        }
+        return deliveryDate;
+      }
+
+      let fromDayGround = getDeliveryDay(shipping_rush + shipping_standard - 4);
+      let toDayGround = getDeliveryDay(shipping_rush + shipping_standard - 2);
+
+      let fromDayExpress = getDeliveryDay(shipping_rush + shipping_express - 2);
+      let toDayExpress = getDeliveryDay(shipping_rush + shipping_express);
+
+      let message = 'USPS 2-Day shipping delivers ';
+
+      if (shipping_standard) {
+        message += fromDayGround.toString('MMM dd') + ' – ';
+        message += toDayGround.toString('MMM dd') + '. ';
+      } else {
+        message = 'UPS Expedited shipping delivers';
+      }
+
+      if (shipping_express) {
+        message += 'Or choose UPS expedited shipping to deliver ';
+        message += fromDayExpress.toString('MMM dd') + ' – ';
+        message += toDayExpress.toString('MMM dd') + '.';
+      }
+
+      shippingNote.innerHTML = message;
+      shippingNote.classList.add('daysMessage');
+      document.querySelector('.product-item__label-list').classList.add('daysMessage');
+
+    }
+  }
+
+  document.querySelector('.header__action-item--cart').addEventListener("cart:rerendered", (event) => {
+    addRushDays(updateRushDays())
+  });
+</script>
+</body>
+</html>

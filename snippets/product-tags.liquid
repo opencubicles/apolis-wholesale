@@ -1,0 +1,33 @@
+{%- if product.tags contains 'Bag' -%}
+<table class="product-tag-set">
+<tbody>
+<tr>
+<td>
+<p class="product-tags"><i class="far fa-shopping-bag"></i><br>Soft leather handle.</p>
+</td>
+<td>
+<p class="product-tags"><i class="fas fa-tint-slash"></i><br>Tear &amp; spill resistant.</p>
+</td>
+<td>
+<p class="product-tags"><i class="far fa-hands-heart"></i><br>Supports Fair Trade™</p>
+</td>
+</tr>
+</tbody>
+</table>
+{%- elsif product.tags contains 'Mask' -%}
+<table class="product-tag-set">
+<tbody>
+<tr>
+<td>
+<p class="delivery-date"><i class="fab fa-cotton-bureau"></i><br>Made of premium-grade cotton.<br></p>
+</td>
+<td>
+<p class="delivery-date"><i class="far fa-smile-wink"></i><br>Designed&nbsp;for all-day comfort.<br></p>
+</td>
+<td>
+<p class="delivery-date"><i class="far fa-hands-heart"></i><br> Supports families in need.</p>
+</td>
+</tr>
+</tbody>
+</table>
+{%- endif -%}

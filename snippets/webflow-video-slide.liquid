@@ -1,0 +1,56 @@
+<a href="{{ link }}" class="wine-week-background-video-2 w-background-video w-background-video-atom">
+  <div class="video"></div>
+  <noscript class="hidden-tablet-and-up">
+    <video class="hidden-tablet-and-up" autoplay="" data-object-fit="cover" data-wf-ignore="true" loop="" muted="" playsinline="" style='background-image:url("{{ mobile_image | img_url: 'master' }}")'>
+        <source data-wf-ignore="true" src="{{ mobile_video | file_url }}"/>
+    </video>
+  </noscript>
+  <noscript class="hidden-phone">
+    <video class="hidden-phone" autoplay="" data-object-fit="cover" data-wf-ignore="true" loop="" muted="" playsinline="" style='background-image:url("{{ image | img_url: 'master' }}")'>
+        <source data-wf-ignore="true" src="{{ video | file_url }}"/>
+    </video>
+  </noscript>
+</a>
+<script type="text/javascript">
+  function outputVideo() {
+    const container = document.querySelector('.w-background-video');
+    if( window.innerWidth < 640 ) {
+      document.querySelector('.w-background-video .video').innerHTML = document.querySelector('noscript.hidden-tablet-and-up').innerText;
+    }
+    else {
+      document.querySelector('.w-background-video .video').innerHTML = document.querySelector('noscript.hidden-phone').innerText;
+    }
+  }
+
+  outputVideo();
+  outputVideoSize = window.innerWidth < 640;
+
+  window.addEventListener('resize', function() {
+    if (outputVideoSize != (window.innerWidth < 640)) {
+      outputVideo();
+      outputVideoSize = window.innerWidth < 640;
+    }
+  });
+</script>
+<style type="text/css">
+  .w-background-video {
+    width: 100%;
+    display: block;
+    position: relative;
+    padding-top: 50%;
+  }
+  .w-background-video video {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    position: absolute;
+    top: 0;
+  }
+  @media screen and (max-width: 640px) {
+    .w-background-video {
+      padding-top: 148.14814815%;
+    }
+  }
+  .hidden-phone {}
+  .hidden-tablet-and-up {}
+</style>

@@ -1,0 +1,62 @@
+{%- if settings.settings.afterpay_enabled -%}
+<!-- Start of Afterpay assets -->
+<script type="application/javascript" src="https://static-us.afterpay.com/javascript/present-afterpay.js"></script>
+<script>
+  const isGiftCard = (item) => item.product_type === "Gift Card";
+  function giftCardDetected(){const t={{ product | json }},i={{ cart.items | json }};return t?"Gift Card"===t.type:!!i&&i.some(isGiftCard)}
+  let amount = 0, priceSelector = "", locale = 'en_US';
+  let baseObserverConfig = { activated: true, isDecimalPrice: true };
+  let mutationObserver = null;
+  
+	{%case template.name%} 
+      {%when "product"%}
+		const merchantProvidedAfterpayMessaging = document.querySelector('.price:nth-child(3)');
+  		const afterpayMessaging = new presentAfterpay({ locale: "en_US" });
+
+  		// element with "Pay over time with Afterpay" exists
+        if(merchantProvidedAfterpayMessaging) {
+          // open our modal when this message is clicked
+          merchantProvidedAfterpayMessaging.addEventListener('click', () => afterpayMessaging.modal.open());
+        }
+  		
+      {%when "cart"%}
+        const afterpayCartConfig = {
+          locale: 'en_US',
+          amount: {{cart.total_price | json}},
+          priceSelector: ".cart-recap__price-line:nth-child(2)",
+        };
+//         mutationObserver = { 
+//           ...baseObserverConfig,
+//           // observerTarget: '.PageContent',
+//           targetPriceSelector: '',
+//         };
+        window.addEventListener('DOMContentLoaded', () => new presentAfterpay(afterpayCartConfig).init());
+  {%endcase%}
+</script>
+
+<style type="text/css">
+  /* "Pay over time with Afterpay" */
+  .price:nth-child(3) {
+  	cursor: pointer; /* let the user know this can be clicked */
+  }
+  .afterpay-paragraph {
+    font-size: 0.9em;
+    margin-bottom: 18px !important;
+  }
+  .afterpay-logo-link {
+   	display: inline-block; 
+  }
+  {%case template.name%} 
+  	{%when "cart"%}
+      .afterpay-paragraph {
+        font-size: 0.8em;
+        text-align: right;
+      }
+  	{%when "product"%}
+      .afterpay-paragraph {
+
+      }
+  {%endcase%}
+</style>
+<!-- End of Afterpay assets -->
+{%- endif -%}

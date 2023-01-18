@@ -1,0 +1,264 @@
+<section class="section" data-section-id="{{ section.id }}" data-section-type="image-with-text">
+  <div class="container">
+    {%- capture image -%}
+      <div class="image-with-text__image-container" style="width: {{ section.settings.image_width }}%;">
+        {%- if section.settings.image -%}
+          <div class="aspect-ratio" style="padding-bottom: {{ 100.0 | divided_by: section.settings.image.aspect_ratio }}%">
+            {%- capture supported_sizes -%}{%- render 'image-size', sizes: '300,400,500,600,700,800,900,1000,1100,1200', image: section.settings.image -%}{%- endcapture -%}
+            {%- assign image_url = section.settings.image | img_url: '1x1' | replace: '_1x1.', '_{width}x.' -%}
+
+            <img class="lazyload image--fade-in" data-src="{{ image_url }}" data-widths="[{{ supported_sizes }}]" data-sizes="auto" alt="{{ section.settings.image.alt | escape }}">
+
+            <noscript>
+              <img src="{{ section.settings.image | img_url: '800x' }}" alt="{{ section.settings.image.alt | escape }}">
+            </noscript>
+          </div>
+        {%- else -%}
+          {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+        {%- endif -%}
+      </div>
+    {%- endcapture -%}
+
+    {% if section.settings.video_url %}
+      {% capture video %}
+        <div class="video-list image-with-text__image-container" style="width: {{ section.settings.image_width }}%;">
+          <div class="video-list__item" data-action="play-video" aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
+              
+            <video autoplay="" loop="" playsinline="" class="everlane-preview-video" src="{{ 'ApolisStopMotion2.mp4' | file_url }}" muted="true" style="width: 100%;"></video>
+
+          </div>
+        </div>
+
+        <style type="text/css">
+          #shopify-section-{{ section.id }} .video-wrapper::after {
+            padding-bottom: 133.33%;
+          }
+          #shopify-section-{{ section.id }} .video-wrapper__video,
+          #shopify-section-{{ section.id }} .video-wrapper__video_player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+          }
+        </style>
+        <script type="text/javascript">
+
+          setupVideos = function(event) {
+
+            console.log('setupVideos');
+
+            var vimeos = $('.video-wrapper', '#shopify-section-{{ section.id }}');
+
+            vimeos.toggleVideo = function(e) {
+              var banner = $(e.currentTarget);
+              var videoContainer = banner.siblings('.video-wrapper__video'); //.show();
+              var options = {
+                loop: true,
+                autoplay: 1,
+                controls: 0,
+                title: 0,
+                muted: 1,
+                byline: 0,
+                portrait: 0,
+                background: 1,
+                transparent: 1,
+                api: 1
+              };
+
+              var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+              var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+              // var selector = '.video-wrapper.' + (window.innerWidth > 999 ? 'desktop' : 'mobile');
+              var selector = '.video-wrapper__video_player';
+
+              if (isFirefox || isSafari) {
+                options['muted'] = 1;
+              }
+
+              var player = new Vimeo.Player($(selector, videoContainer)[0], options);
+
+              player.on('ended', function(data) {
+                console.log('player.ended', data);
+                player.getLoop().then(function(loop) {
+                  console.log('player.getLoop', loop);
+                  if (!loop) {
+                    // banner.show();
+                    videoContainer.fadeOut();
+                    player.destroy();
+                  }
+                });
+                   
+              });
+
+              player.on('play', function(data) {
+                console.log('play', data);
+                // if (data.seconds > 1 && data.seconds < 2) {
+                  console.log('playing');
+                  videoContainer.show().css("opacity", 1);
+                // }
+              });
+
+              player.on('pause', function(data) {
+                console.log('paused');
+                player.setVolume(0.8);
+              });
+
+              // player.pause();
+              // setTimeout(function() {
+              //   player.play();
+              // }, 1000);
+
+            }
+
+            if (vimeos.length) {
+              $('.video-wrapper__image-wrapper', vimeos).on('click', vimeos.toggleVideo);
+            }
+
+            {% if section.settings.autoplay %}
+              // $(document).ready(function() {
+                setTimeout(function() {
+                  console.log('setTimeout');
+                  $('.video-wrapper__image-wrapper', vimeos).click();
+                }, 500);
+              // });
+            {% endif %}
+
+          }
+
+          function ready(callbackFunction){
+            if(document.readyState != 'loading')
+              callbackFunction(event)
+            else
+              document.addEventListener("DOMContentLoaded", callbackFunction)
+          }
+          ready(event => {
+            setupVideos(event);
+            console.log('ready');
+          })
+
+        </script>
+
+      {% endcapture %}
+    {% endif %}
+
+    {%- capture text -%}
+      <div class="image-with-text__text-container">
+        <div class="image-with-text__text-aligner">
+          {%- if section.settings.title != blank -%}
+            <h2 class="heading h1">{{ section.settings.title | escape }}</h2>
+          {%- endif -%}
+
+          <div class="rte">
+            {{ section.settings.content }}
+
+            {%- if section.settings.button_link != blank and section.settings.button_text != blank -%}
+              <a href="{{ section.settings.button_link }}" class="button button--primary">{{ section.settings.button_text | escape }}</a>
+            {%- endif -%}
+          </div>
+        </div>
+      </div>
+    {%- endcapture -%}
+
+    <div class="image-with-text">
+      {%- if section.settings.image_position == 'left' -%}
+        {% if video %}
+          {{ video }}
+        {% else %}
+          {{ image }}
+        {% endif %}
+        {{ text }}
+      {%- else -%}
+        {{ text }}
+        {% if video %}
+          {{ video }}
+        {% else %}
+          {{ image }}
+        {% endif %}
+      {%- endif -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Image text - 02 Lander",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image",
+      "info": "1200 x 800px .jpg recommended"
+    },
+    {
+      "type": "video_url",
+      "id": "video_url",
+      "accept": ["vimeo", "youtube"],
+      "label": "Video"
+    },
+    {
+      "type": "checkbox",
+      "id": "autoplay",
+      "default": true,
+      "label": "Autoplay"
+    },
+    {
+      "type": "select",
+      "id": "image_position",
+      "label": "Image position",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "range",
+      "id": "image_width",
+      "min": 20,
+      "max": 70,
+      "step": 5,
+      "unit": "%",
+      "label": "Image width",
+      "default": 50
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Your title"
+    },
+    {
+      "type": "richtext",
+      "id": "content",
+      "label": "Text",
+      "default": "<p>Use this text to share information about your brand with your customers.<br>Describe a product, share announcements, or welcome customers to your store.</p>"
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button text",
+      "default": "Our products"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Button link",
+      "default": "/collections/all"
+    }
+  ],
+  "presets": [
+    {
+      "category": "Image",
+      "name": "Image with text",
+      "settings": {}
+    }
+  ]
+}
+{% endschema %}

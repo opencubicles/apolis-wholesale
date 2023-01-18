@@ -1,0 +1,106 @@
+<section>
+  <div class="container">
+    <style type="text/css">
+      .form--main {
+        max-width: unset;
+      }
+      .form--main form {
+        max-width: 380px;
+      }
+      .two-column {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .two-column > div {
+        max-width: 50%;
+        min-width: 380px;
+      }
+      .two-column > div:first-child {
+        padding: 15px 30px 0 0;
+        min-width: 500px;
+      }
+
+      @media screen and (max-width: 1000px) {
+        .form--main {
+          margin-top: 60px;
+        }
+        .two-column > div {
+          max-width: unset;
+          min-width: unset;
+        }
+        .two-column > div:first-child {
+          padding: 0 0 30px;
+          max-width: 700px;
+        }
+      }
+    </style>
+    <div class="two-column form--main">
+      <div>
+        {{ 'vip-perks.jpg' | file_url | img_tag }}
+      </div>
+      <div>
+
+        {%- form 'create_customer', name: 'create', class: 'form Xform--main', id: 'create_customer' -%}
+          <header class="form__header">
+            <h1 class="form__title heading h2">Create my VIP Perks Account</h1>
+            <p class="form__legend">{{ 'customer.register.description' | t }}</p>
+          </header>
+
+          {%- if form.errors -%}
+            <div class="alert alert--error">
+              <ul class="alert__error-list">
+                {%- for field in form.errors -%}
+                  {%- if field == 'form' -%}
+                    <li class="alert__error-item">{{ form.errors.messages[field] }}</li>
+                  {%- else -%}
+                    <li class="alert__error-item"><strong>{{ form.errors.translated_fields[field] }}</strong> {{ form.errors.messages[field] }}</li>
+                  {%- endif -%}
+                {%- endfor -%}
+              </ul>
+            </div>
+          {%- endif -%}
+
+          {%- if request.locale.iso_code == 'ja' -%}
+            <div class="form__input-wrapper form__input-wrapper--labelled">
+              <input type="text" id="customer[last_name]" class="form__field form__field--text" name="customer[last_name]" required="required">
+              <label for="customer[last_name]" class="form__floating-label">{{ 'customer.register.last_name' | t }}</label>
+            </div>
+
+            <div class="form__input-wrapper form__input-wrapper--labelled">
+              <input type="text" id="customer[first_name]" class="form__field form__field--text" name="customer[first_name]" required="required">
+              <label for="customer[first_name]" class="form__floating-label">{{ 'customer.register.first_name' | t }}</label>
+            </div>
+          {%- else -%}
+            <div class="form__input-wrapper form__input-wrapper--labelled">
+              <input type="text" id="customer[first_name]" class="form__field form__field--text" name="customer[first_name]" required="required">
+              <label for="customer[first_name]" class="form__floating-label">{{ 'customer.register.first_name' | t }}</label>
+            </div>
+
+            <div class="form__input-wrapper form__input-wrapper--labelled">
+              <input type="text" id="customer[last_name]" class="form__field form__field--text" name="customer[last_name]" required="required">
+              <label for="customer[last_name]" class="form__floating-label">{{ 'customer.register.last_name' | t }}</label>
+            </div>
+          {%- endif -%}
+
+          <div class="form__input-wrapper form__input-wrapper--labelled">
+            <input type="email" id="customer[email]" class="form__field form__field--text" name="customer[email]" required="required">
+            <label for="customer[email]" class="form__floating-label">{{ 'customer.register.email' | t }}</label>
+          </div>
+
+          <div class="form__input-wrapper form__input-wrapper--labelled">
+            <input type="password" id="customer[password]" class="form__field form__field--text" name="customer[password]" required="required" autocomplete="new-password">
+            <label for="customer[password]" class="form__floating-label">{{ 'customer.register.password' | t }}</label>
+          </div>
+
+          <button type="submit" class="form__submit button button--primary button--full">{{ 'customer.register.submit' | t }}</button>
+
+          <div class="form__secondary-action">
+            <p>{{ 'customer.register.already_have_account' | t }} <a href="{{ routes.account_login_url }}" class="link link--accented">{{ 'customer.register.login' | t }}</a></p>
+          </div>
+        {%- endform -%}
+
+      </div>
+    </div>
+  </div>
+</section>

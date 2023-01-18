@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="{{ locale }}" dir="{{ direction }}" class="{{ checkout_html_classes }}">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, height=device-height, minimum-scale=1.0, user-scalable=0">
+    <meta name="referrer" content="origin">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-WVS5JBQ');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DN4KMVWZBG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-DN4KMVWZBG');
+    </script>
+
+
+    <title>{{ page_title }}</title>
+
+    {{ content_for_header }}
+
+    {{ checkout_stylesheets }}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    {{ checkout_scripts }}
+  </head>
+  <body>
+
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WVS5JBQ"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+    
+    {{ skip_to_content_link }}
+
+    <header class="banner" data-header role="banner">
+      <div class="wrap">
+        {{ content_for_logo }}
+      </div>
+    </header>
+
+    {{ order_summary_toggle }}
+    <div class="content" data-content>
+      <div class="wrap">
+        <div class="main">
+          <header class="main__header" role="banner">
+            {{ content_for_logo }}
+            {{ breadcrumb }}
+            {{ alternative_payment_methods }}
+          </header>
+          <main class="main__content" role="main">
+            {{ content_for_layout }}
+          </main>
+          <footer class="main__footer" role="contentinfo">
+                  <div class="hide-desktop">
+                     <div style="text-align: left; margin: 5px 0px 20px 0px; line-height: 1.4; font-size: 16px">
+                       <span style="font-size: 18px"><strong> <i class="fa-solid fa-heart"></i>&nbsp;Love it, or your money back!</strong></span><br>
+                        We stand behind the quality of every Apolis product with a 30-day money-back guarantee.
+                     </div>
+                     <div style="text-align: left; margin: 5px 0px 0px 0px; line-height: 1.4; font-size: 16px">
+                       <span style="font-size: 18px"><strong><i class="fa-solid fa-hand-holding-hand"></i>&nbsp;Made by Working Mothers</strong></span><br>
+                        Your purchase helps break a poverty cycle! The mothers who handcraft your bag receive above Fair Trade wages, annual profit dividends, and a retirement fund to help them achieve their dreams, all thanks to your market bag.
+                     </div>                    
+                    
+                  </div>            
+            
+            {{ content_for_footer }}
+          </footer>
+        </div>
+        <aside class="sidebar" role="complementary">
+          <div class="sidebar__header">
+            {{ content_for_logo }}
+          </div>
+          <div class="sidebar__content">
+            {{ content_for_order_summary }}
+                  <div class="hide-mobile" style="border-top: 1px solid rgba(179,179,179,0.34); border-bottom: 1px solid rgba(179,179,179,0.34); padding: 20px 0">
+
+                     <div style="text-align: left; margin: 5px 0px 20px 0px; line-height: 1.4; font-size: 16px">
+                       <span style="font-size: 18px"><strong> <i class="fa-solid fa-heart"></i>&nbsp;Love it, or your money back!</strong></span><br>
+                        We stand behind the quality of every Apolis product with a 30-day money-back guarantee.
+
+                     </div>
+                    
+                     <div style="text-align: left; margin: 5px 0px 0px 0px; line-height: 1.4; font-size: 16px">
+                       <span style="font-size: 18px"><strong><i class="fa-solid fa-hand-holding-hand"></i>&nbsp;Made by Working Mothers</strong></span><br>
+                        Your purchase helps break a poverty cycle! The mothers who handcraft your bag receive above Fair Trade wages, annual profit dividends, and a retirement fund to help them achieve their dreams, all thanks to your market bag.
+                     </div>                         
+                  </div>            
+            
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    {{ tracking_code }}
+
+    <script>
+      var country_code =  "US";
+
+      console.log(country_code);
+
+      fetch("https://www.cloudflare.com/cdn-cgi/trace")
+      .then((res) => res.text())
+      .then((t) => {
+        var data = t.replace(/[\r\n]+/g, '","').replace(/\=+/g, '":"');
+        data = '{"' + data.slice(0, data.lastIndexOf('","')) + '"}';
+        var jsondata = JSON.parse(data);
+        window.country_code = jsondata.loc;
+        console.log(country_code);
+      });
+      
+      // add SMS checkbox
+      (function($) {
+        $(document).on("page:load page:change", function() {
+          //console.log('page load triggered');
+          if (Shopify.Checkout.step === 'contact_information') {
+            //console.log('on contact info step');
+            if ($("#checkout_accept_sms").length < 1) {
+              $('<div class="fieldset">\
+                <div class="checkbox-wrapper" style="padding-top: 6px;padding-bottom: 0px;padding-left: 6px;">\
+                <div class="checkbox__input">\
+                  <input id="checkout_attributes" type="hidden" name="checkout[attributes][smsOptIn]" value="SMS:False">\
+                  <input class="input-checkbox" type="checkbox" value="1" checked="" id="checkout_accept_sms">\
+                </div>\
+                <label class="checkbox__label" for="checkout_accept_sms">By checking this box I consent to receive human support, automated offers, personalized recommendations and more by text message from {{ settings.sms_number }}. Message frequency varies per user. Msg & data rates may apply. Text STOP to opt out, HELP for help. Consent is not a condition to purchase. See more on our Privacy Policy & Terms. </label>\ </div>\ </div>').insertAfter($(".section--shipping-address").eq(0));
+              $("#checkout_accept_sms").on("change", function() {
+                //console.log('change value triggered');
+                var cn = $("#checkout_attributes").val();
+                cn = cn.replace(/SMS:(True|False)/gi, "");
+                cn += $(this).prop('checked') ? "SMS:True" : "SMS:False";
+                $("#checkout_attributes").val(cn);
+              });
+            }
+          }
+        });
+      })(Checkout.$);
+    </script>
+   
+  </body>
+</html>
+
+<style>
+   @media (min-width: 1000px){
+   .page--banner .banner {
+   padding-top: 1em;
+   padding-bottom: 2em;
+   }
+   .logo__image--large {
+   max-height: 60px;
+   }   
+   .order-summary__sections {
+   height: auto;
+   }
+   .hide-desktop {
+   display: none;
+   }
+   }
+   @media (max-width: 999px){  
+   .banner {
+   padding: 0.5em 0;  
+   }
+   .logo__image--large {
+   max-height: 50px;
+   }
+   .hide-mobile {
+   display: none;
+   }    
+   }
+   @font-face {
+   font-family: "calibre-bold";
+   src: url("calibre-bold.woff2") format("woff2"),
+   url("calibre-bold.woff") format("woff");
+   font-display: swap;
+   }  
+   @font-face {
+   font-family: "calibre-regular";
+   src: url("calibre-regular.woff2") format("woff2"),
+   url("calibre-regular.woff") format("woff");
+   font-display: swap;
+   }    
+  
+   .btn {
+   text-transform: uppercase;
+   }
+</style>
+
+<script src="https://kit.fontawesome.com/f638615b03.js" crossorigin="anonymous"></script>
+{%- liquid
+  assign total_cart_rush_qty = 0
+  assign rush_qty = 0
+  assign wrap_qty = 0
+-%}
+{% for line_item in checkout.line_items %}
+  {%- liquid
+    unless line_item.product.handle contains "gift-tag" or line_item.product.tags contains "No Rush" or line_item.sku == 'RUSH-FULFILLMENT' or line_item.sku == 'GIFTWRAP' or line_item.sku == 'GIFTWRAPNRI'
+      assign total_cart_rush_qty = total_cart_rush_qty | plus: line_item.quantity
+    endunless
+    if "rush-order" == line_item.product.handle
+      assign rush_qty = rush_qty | plus: line_item.quantity
+    endif
+    if "gift-wrap" == line_item.product.handle
+      assign wrap_qty = wrap_qty | plus: line_item.quantity
+    endif
+  -%}
+{% endfor %}
+<!-- UPSELL SCRIPT -->
+<script type="text/javascript">
+var total_rush_to_add = {{total_cart_rush_qty}};
+var rush_qty = {{rush_qty}};
+var wrap_qty = {{wrap_qty}};
+var isMobile = navigator.userAgent.match(
+  /(iPhone|iPod|iPad|Android|webOS|BlackBerry|IEMobile|Opera Mini)/i
+);
+if (isMobile) {
+  var div_class = "main__header";
+} else {
+  var div_class = "order-summary__section--total-lines";
+}
+(function CheckoutUpsell() {
+  "use strict";
+  // Perform changes only on the shipping_method step
+  if (Shopify.Checkout.step !== "contact_information") return;
+  // Upsell Items (can be added as many products as possible)
+  const upsellProductHandles = [];
+  if(rush_qty == 0 && total_rush_to_add > 0 && country_code == "US") {
+    upsellProductHandles.push("rush-order");
+  }
+  if(wrap_qty == 0) {
+    upsellProductHandles.push("gift-wrap");
+  }
+  // Logic
+
+  const init = () => {
+    const upsellTable = document.querySelector("[data-upsell-table]");
+    const upsellTableBody = upsellTable.getElementsByTagName("tbody")[0];
+    // Fetch Upsell Products
+    upsellProductHandles.forEach((handle) => {
+  
+      fetch(`/products/${handle}.js`) // Call the fetch function passing the url of the API as a parameter
+        .then((response) => response.json())
+        .then((product) => {
+          const firstAvailableVariant = product.variants[0];
+          const featuredImage = product.media[0];
+          var template = `<tr class="product" data-product-id="${
+            product.id
+          }" data-variant-id="${firstAvailableVariant.id}" data-product-type="${
+            product.type
+          }">
+                <td class="product__image">
+                  <div class="product-thumbnail ">
+                    <div class="product-thumbnail__wrapper">
+                      <img alt="${
+                        featuredImage.alt
+                      }" class="product-thumbnail__image" src="${
+            featuredImage.src
+          }">
+                    </div>
+                  </div>
+                </td>
+                <th class="product__description" scope="row">
+                  <span class="product__description__name order-summary__emphasis">${
+                    product.title
+                  }</span>`;
+                  if((product.title.indexOf("Rush") !== -1))
+               template +=    `<span class="product__description__variant order-summary__small-text">Does not apply for candles, embroidery, calligraphy, or international orders</span>`;
+                template += `</th>
+                <td class="product__quantity">
+                  <span class="visually-hidden">
+                    1
+                  </span>
+                </td>
+                <td class="product__price">
+                  <button class="field__input-btn btn btn-add" data-variant-id="${
+                    firstAvailableVariant.id
+                  }">Add</button><br />
+                <span class="product__price">
+                  <span class="order-summary__emphasis skeleton-while-loading">$${
+                    product.price / 100.0
+                  }</span> per bag
+                </span>
+                </td>
+              </tr>`;
+          upsellTableBody.innerHTML += template;
+        })
+        .catch((error) => {
+          console.error("Upsell product fetch error:", error);
+        });
+    });
+  };
+
+  document.addEventListener("page:load", (event) => {
+    // Initialize after Shopify renders the checkout
+    const newNode = document.createElement("div");
+
+    newNode.innerHTML =
+      '<table class="product-table" style="margin-bottom:10px;" data-upsell-table><tbody data-order-summary-section="line-items"></tbody></table>';
+    const total_lines_html = document.getElementsByClassName(div_class);
+
+    total_lines_html[0].parentNode.insertBefore(newNode, total_lines_html[0]);
+    setTimeout(init, 2000);
+    setTimeout(associateEvents, 3500);
+  });
+  // Reinitialize on DOM refresh
+  document.addEventListener("page:change", (event) => {
+    // Initialize after Shopify renders the checkout
+    const newNode = document.createElement("div");
+    newNode.innerHTML =
+      '<table class="product-table" data-upsell-table><tbody data-order-summary-section="line-items"></tbody></table>';
+    const total_lines_html = document.getElementsByClassName(div_class);
+
+    total_lines_html[0].parentNode.insertBefore(newNode, total_lines_html[0]);
+    setTimeout(init, 2000);
+    setTimeout(associateEvents, 3500);
+  });
+})();
+
+function associateEvents() {
+  const btnAddElements = document.getElementsByClassName("btn-add");
+  for (let i = 0; i < btnAddElements.length; i++) {
+    const element = btnAddElements[i];
+    element.addEventListener("click", (e) => {
+      const variantId = e.currentTarget.dataset.variantId;
+      let formData = {
+        items: [
+          {
+            id: variantId,
+            quantity: total_rush_to_add,
+          },
+        ],
+      };
+      fetch("/cart/add.js", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          location.reload();
+        })
+        .catch((error) => {
+          console.error("Upsell product add error:", error);
+        });
+    });
+  }
+}
+</script>

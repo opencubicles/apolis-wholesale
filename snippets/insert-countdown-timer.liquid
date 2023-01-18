@@ -1,0 +1,168 @@
+{% if text contains '[' and text contains ']' %}
+
+  {% assign left_text = text | split: "[" | first %}
+  {% assign end_date = text | split: "[" | last | split: "]" | first %}
+  {% assign right_text = text | split: "]" %}
+  {% assign right_text = right_text[1] %}
+  {{ left_text }}
+  {% if end_date %}
+    <span id="CountdownTimer{{ position }}" class="x" data-end-date="{{ end_date }}">
+      <span class="segment days_span"><span class="countdown_days">&mdash;</span> <span class="days_label">Days</span></span>
+      <span class="segment hours_span"><span class="countdown_hours">&mdash;</span> <span class="hours_label">Hrs</span></span>
+      <span class="segment minutes_span"><span class="countdown_minutes">&mdash;</span> <span class="minutes_label">Mins</span></span>
+      <span class="segment seconds_span"><span class="countdown_seconds">&mdash;</span> <span class="seconds_label">Secs</span></span>
+      {% unless end_date contains "/" %}
+        <style type="text/css">
+          .days_span, .hours_span, .minutes_span, .seconds_span { display: none; };
+        </style>
+      {% endunless %}
+      {% if position == 'Home' %}
+        <style type="text/css">
+          /*Temp hide seconds*/
+          .seconds_span { display: none !important; };
+
+          .slideshow--preserve-ratio .slideshow__content-wrapper {
+            top: 60%;
+          }
+          .slideshow__content_below.slideshow__content_below {
+            margin-top: 160px;
+            text-align: center;
+          }
+          #CountdownTimer{{ position }} {
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            margin-top: 5px;
+          }
+          #CountdownTimer{{ position }} span.segment {
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+          }
+          #CountdownTimer{{ position }} span.segment span:first-child {
+            font-size: 2.2rem;
+            margin: 0 25px;
+            line-height: 1;
+            font-family: var(--heading-font-family);
+          }
+          #CountdownTimer{{ position }} span.segment span:last-child {
+            font-size: 0.9rem;
+            /*text-transform: uppercase;*/
+            margin: 0px 13px;
+          }
+          @media screen and (min-width: 641px) {
+            .slideshow--preserve-ratio .slideshow__content-wrapper {
+              top: 65%;
+            }
+            .slideshow__content_below.slideshow__content_below {
+              margin-top: 170px;
+              text-align: unset;
+            }
+            #CountdownTimer{{ position }} {
+              justify-content: flex-start;
+              margin-left: -18px;
+            }
+            #CountdownTimer{{ position }} span.segment span:first-child {
+              font-size: 2.8rem;
+            }
+            #CountdownTimer{{ position }} span.segment span:last-child {
+             font-size: 1rem; 
+            }
+          }
+        </style>
+      {% endif %}
+    </span>
+
+    <script type="text/javascript">
+      initCountdownClock = function() {
+
+        function addDays(date, days) {
+          var result = new Date(date);
+          result.setDate(date.getDate() + days);
+          return result;
+        }
+
+        // From: https://www.sitepoint.com/build-javascript-countdown-timer-no-dependencies/
+        var getTimeRemaining = function(endtime) {
+          var start = new Date();
+          var offset = start.getTimezoneOffset() - 480; //summer:420 - winter:480
+          start.setMinutes( start.getMinutes() + offset );
+          var t = endtime - start;
+          var seconds = Math.floor((t / 1000) % 60);
+          var minutes = Math.floor((t / 1000 / 60) % 60);
+          var hours = Math.floor((t / (1000 * 60 * 60)) % 24);
+          var days = Math.floor(t / (1000 * 60 * 60 * 24));
+          return {
+            'total': t,
+            'days': days,
+            'hours': hours,
+            'minutes': minutes,
+            'seconds': seconds
+          };
+        }
+
+        var initializeClock = function(id, endtime) {
+          var clock = document.getElementById(id);
+
+          if (clock) {
+            if (endtime.length <= 2) {
+              var et = new Date();
+              et.setDate(parseInt(endtime));
+              endtime = et;
+            }
+            endtime = new Date(endtime);
+            endtime = addDays(endtime, 1);
+
+            var daysSpan = clock.querySelector('.countdown_days');
+            var hoursSpan = clock.querySelector('.countdown_hours');
+            var minutesSpan = clock.querySelector('.countdown_minutes');
+            var secondsSpan = clock.querySelector('.countdown_seconds');
+
+            var leadingZero = '';
+
+            function updateClock() {
+              var t = getTimeRemaining(endtime);
+
+             if (t.days < 1) {
+                document.querySelector('.days_span').style.display = "none";
+                if (t.hours < 1) {
+                  document.querySelector('.hours_span').style.display = "none";
+                }
+              }
+              else if (t.days == 1) {
+                document.querySelector('.days_label').innerText = 'Day';
+              }
+              else {
+                document.querySelector('.days_label').innerText = 'Days';
+              }
+
+              document.querySelector('.hours_label').innerText = t.hours == 1 ? 'Hr' : 'Hrs';
+              document.querySelector('.minutes_label').innerText = t.minutes == 1 ? 'Min' : 'Mins';
+              document.querySelector('.seconds_label').innerText = t.seconds == 1 ? 'Sec' : 'Secs';
+
+              daysSpan.innerHTML = t.days;
+              hoursSpan.innerHTML = (leadingZero + t.hours).slice(-2);
+              minutesSpan.innerHTML = (leadingZero + t.minutes).slice(-2);
+              secondsSpan.innerHTML = (leadingZero + t.seconds).slice(-2);
+
+              if (t.total <= 0) {
+                clearInterval(timeinterval);
+              }
+            }
+
+            updateClock();
+
+            var timeinterval = setInterval(updateClock, 1000);
+          }
+        }
+
+        var deadline = document.getElementById('CountdownTimer{{ position }}').getAttribute('data-end-date');
+        initializeClock('CountdownTimer{{ position }}', deadline);
+      }();
+    </script>
+  {% endif %}
+  {{ right_text }}
+    
+{% else %}
+  {{ text }}
+{% endif %}

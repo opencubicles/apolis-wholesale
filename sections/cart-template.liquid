@@ -1,0 +1,1724 @@
+<script type="text/javascript">
+  var customizer_base_url = "https://tuvd1ov9o6.execute-api.us-west-1.amazonaws.com/customizer/customizer-prod?";
+</script>
+{%- capture section_settings -%}
+{
+  "showShippingEstimator": {% if cart.item_count == 0 %}false{% else %}{{ section.settings.show_shipping_estimator | json }}{% endif %}
+}
+{%- endcapture -%}
+
+<!-- Begin ReCharge code -->
+{% capture subscription_cart_footer_content %}{% render 'subscription-cart-footer' %}{% endcapture %}
+{% unless subscription_cart_footer_content contains "Liquid error" %}
+  {{ subscription_cart_footer_content }}
+{% endunless %}
+<!-- End ReCharge code -->
+
+{%- liquid
+  assign total_cart_qty = 0
+  assign total_cart_qty_nri = 0
+  assign total_cart_qty_bags = 0
+  assign total_cart_rush_qty = 0
+  assign total_cart_qty_embroidery = 0
+  assign total_cart_qty_calligraphy = 0
+
+  assign wrap_qty = 0
+  assign wrap_qty_nri = 0
+  assign wrap_key = ''
+  assign wrap_key_nri = ''
+
+  assign rush_qty = 0
+  assign rush_key = ''
+-%}
+
+<section data-section-id="{{ section.id }}" data-section-type="cart" data-section-settings='{{ section_settings }}' data-item-count="{{ cart.item_count }}">
+  {%- if cart.item_count == 0 -%}
+    <div class="container">
+      <div class="empty-state">
+
+        <div class="Rise__quick-apply-placeholder"></div>
+
+        <div class="empty-state__icon">
+          {%- render 'icon', icon: 'big-cart' -%}
+        </div>
+
+        <p class="empty-state__heading heading h1">{{ 'cart.general.empty' | t }}</p>
+
+        {%- if settings.cart_show_free_shipping_threshold -%}
+          {%- assign threshold_in_cents = settings.cart_free_shipping_threshold | times: 100 -%}
+          {%- capture remaining_amount -%}<span>{{ cart.total_price | minus: threshold_in_cents | abs | money_without_trailing_zeros }}</span>{%- endcapture -%}
+          <p class="empty-state__description">{{ 'cart.general.free_shipping_remaining_html' | t: remaining_amount: remaining_amount }}</p>
+        {%- endif -%}
+
+        <div class="empty-state__button-container">
+          <a href="/collections/best-sellers" class="empty-state__button button button--primary">{{ 'cart.general.empty_button' | t }}</a>
+        </div>
+      </div>
+    </div>
+  {%- else -%}
+    <form method="post" action="{{ routes.cart_url }}" novalidate="novalidate" data-item-count="{{ cart.item_count }}">
+      <input type="hidden" name="attributes[collection_products_per_page]" value="">
+      <input type="hidden" name="attributes[collection_layout]" value="">
+
+      <div class="container">
+        <header class="page__header page__header--stack">
+          <h1 class="page__title heading h1">{{ 'cart.general.title' | t }}</h1>
+
+          {%- if settings.cart_show_free_shipping_threshold -%}
+            {%- assign threshold_in_cents = settings.cart_free_shipping_threshold | times: 100 -%}
+
+            <p class="page__description" style="font-size:14px;">
+            
+            {%- if cart.total_price >= threshold_in_cents -%}
+              Neat! Your order qualifies for <strong>USA FREE SHIPPING.</strong>
+            {%- else %}
+              {%- capture remaining_amount -%}<span>{{ cart.total_price | minus: threshold_in_cents | abs | money_without_trailing_zeros }}</span>{%- endcapture -%}
+              <p class="page__description" style="font-size:14px">{{ 'cart.general.free_shipping_remaining_html' | t: remaining_amount: remaining_amount }}!
+            {%- endif %}
+
+            Continue shopping for <a href="/collections/market-bags"><u><strong>Market Bags</strong></u></a>{% comment %}and <a href="/collections/face-masks"><u><strong>Face Masks</strong></u></a>{% endcomment %}. Save more when you buy more with
+             <a style="cursor:pointer;" data-action="open-modal" aria-controls="modal-discounts"><strong><u>Bulk Discounts</u></strong></a>.
+
+           </p>
+          {%- endif -%}
+
+          <p class="page__description" style="font-size:14px;">
+            {{ settings.cart_instructions | replace:  "[cart_max]",  settings.cart_quantity_limit }}
+          </p>
+
+          {% if settings.mlvedaACS_isMessageDisplay %}
+          <p class="page__description mlvedaCartNote" style="display:none;font-size:14px">
+            {{ settings.mlvedaACS_messageContent | replace: "<<shop.name>>", shop.name | replace:"<<shop.currency>>",shop.currency|replace:"<<shop.selected_currency>>","<span class='selected-currency'></span>"}}
+          </p>
+          {% endif %}
+
+          <a type="button" href="#checkout" class="page__button-action button button--primary button--full button--large hidden-tablet-and-up"><i class="fas fa-lock-alt"></i>&nbsp;&nbsp; Checkout Now</a>
+
+        </header>
+      </div>
+    </form>
+
+    <div class="cart-wrapper">
+      <div class="cart-wrapper__inner">
+        <div class="cart-wrapper__inner-inner">
+          <div class="container container--flush">
+            {%- comment -%}
+
+            {%- endcomment -%}
+
+            <div class="card">
+              <div class="table-wrapper">
+                <table class="line-item-table table table--loose">
+                  <thead class="hidden-phone">
+                    <tr>
+                      <th>{{ 'customer.order.product' | t }}</th>
+                      <th class="table__cell--center">{{ 'customer.order.quantity' | t }}</th>
+                      <th class="table__cell--right">{{ 'customer.order.total' | t }}</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+            {%- comment -%}
+            --------------------------------------------------------------------------------------
+            GIFT WRAP COUNTER AMIT
+            --------------------------------------------------------------------------------------
+            {%- endcomment -%}
+
+            {%- liquid
+              if customer.tags contains "VIPPerks" and customer
+                assign is_vip = true
+              elsif customer.tags contains "VIPBronze" and customer
+                assign is_vip = true
+              elsif customer.tags contains "VIPSilver" and customer
+                assign is_vip = true
+              elsif customer.tags contains "VIPGold" and customer
+                assign is_vip = true
+              else
+                assign is_vip = false
+              endif
+
+              if is_vip
+                assign gift_wrap_product = all_products["apolis-vip-gift-wrap"]
+                assign gift_wrap_product_nri = all_products["apolis-vip-gift-wrap-nri"]
+              else
+                assign gift_wrap_product = all_products["gift-wrap"]
+                assign gift_wrap_product_nri = all_products["gift-wrap-nri"]
+              endif
+
+              assign rush_order_product = all_products["rush-order"]
+
+              assign note_tag_product = all_products["leather-gift-tag-with-note"]
+              assign monogram_tag_product = all_products["leather-gift-tag-with-monogram"]
+
+              assign wraps = 0
+              assign wraps_nri = 0
+              for item in cart.items
+                if item.product.tags contains "wrap"
+                  if item.vendor == 'NRI'
+                    assign wraps_nri = wraps_nri | plus: item.quantity
+                  elsif 'BDML003NAANPC,BDML003NAANVG,BDML035NAANPC,BDML035NAANVG' contains item.sku
+                    assign wraps_nri = wraps_nri | plus: item.quantity
+                  else
+                    assign wraps = wraps | plus: item.quantity
+                  endif
+                   
+                endif
+              endfor
+            -%}
+
+            {%- comment -%}
+            --------------------------------------------------------------------------------------
+            CART ITEMS
+            --------------------------------------------------------------------------------------
+            {%- endcomment -%}
+
+                    {%- for line_item in cart.items -%}
+                    
+                    {%- liquid
+                      assign query_string = ""
+
+                      for metafield in line_item.product.metafields.customizer_web
+                        assign meta_key = metafield | first
+
+                        if meta_key == "img_url"
+                            assign meta_val = metafield | last | url_encode
+                        else
+                            assign meta_val = metafield | last
+                        endif
+
+                        if meta_key != "is_para"
+                            assign query_string = query_string | append: '&' | append: meta_key | append: '=' | append: meta_val
+                        endif
+
+                      endfor
+                    -%}
+
+                      <tr class="line-item line-item--stack">
+                        <td class="line-item__product-info">
+                          <div class="line-item__product-info-wrapper">
+                            <div class="line-item__image-wrapper">
+                              {%- comment -%}For vertical images we force to contain them on a square ratio to avoid growing too large{%- endcomment -%}
+                              <a href="{{ line_item.url }}" class="line-item__title link text--strong">
+                                {%-if line_item.properties.customization != blank -%}
+
+                                  <div class="aspect-ratio aspect-ratio--square">
+                                    <img class="cart-item-customized-link" data-product-id="{{line_item.product_id}}" data-customization="{{line_item.properties.customization}}" data-url_params="{{query_string}}" src="{{ line_item.image | img_url: '180x' }}" alt="{{ line_item.image.alt | escape }}" style="opacity: 0;">
+                                  </div>
+
+                                {%- elsif line_item.image.aspect_ratio < 1 -%}
+                                  <div class="aspect-ratio aspect-ratio--square">
+                                    <img src="{{ line_item.image | img_url: '180x' }}" alt="{{ line_item.image.alt | escape }}">
+                                  </div>
+                                {%- else -%}
+                                  <div class="aspect-ratio" style="padding-bottom: {{ 100.0 | divided_by: line_item.image.aspect_ratio }}%">
+                                    <img src="{{ line_item.image | img_url: '180x' }}" alt="{{ line_item.image.alt | escape }}">
+                                  </div>
+                                {%- endif -%}
+                              </a>
+                            </div>
+
+                            <div class="line-item__meta">
+                              {%- if settings.show_vendor and gift_wrap_product.handle != line_item.product.handle -%}
+                                {%- assign vendor_handle = line_item.product.vendor | handle -%}
+                                {%- assign collection_for_vendor = collections[vendor_handle] -%}
+
+                                {%- unless collection_for_vendor.empty? -%}
+                                  <a class="line-item__vendor link" href="{{ collection_for_vendor.url }}">{{ line_item.product.vendor }}</a>
+                                  {%- else -%}
+                                  <a class="line-item__vendor link" href="{{ line_item.product.vendor | url_for_vendor }}">{{ line_item.product.vendor }}</a>
+                                {%- endunless -%}
+                              {%- endif -%}
+
+                              {%- liquid
+                                if gift_wrap_product.handle == line_item.product.handle
+                                  assign wrap_qty = wrap_qty | plus: line_item.quantity
+                                  assign wrap_key = line_item.key
+                                endif
+
+                                if gift_wrap_product_nri.handle == line_item.product.handle
+                                  assign wrap_qty_nri = wrap_qty_nri | plus: line_item.quantity
+                                  assign wrap_key_nri = line_item.key
+                                endif
+
+                                if line_item.product.tags contains "Embroidery" and line_item.variant.title == "Add Custom Text"
+                                  assign total_cart_qty_embroidery = total_cart_qty_embroidery | plus: line_item.quantity
+                                elsif line_item.product.tags contains "Calligraphy" and line_item.variant.title == "Add Custom Text"
+                                  assign total_cart_qty_calligraphy = total_cart_qty_calligraphy | plus: line_item.quantity
+                                endif
+
+                                if rush_order_product.handle == line_item.product.handle
+                                  assign rush_qty = rush_qty | plus: line_item.quantity
+                                  assign rush_key = line_item.key
+                                endif
+                              -%}
+
+                              {%- if gift_wrap_product.handle == line_item.product.handle or gift_wrap_product_nri.handle == line_item.product.handle or rush_order_product.handle == line_item.product.handle -%}
+                                <span class="line-item__title text--strong">{{ line_item.product.title | replace: " (", "<br/><div style='font-weight: normal;margin-top: 5px;'>(" | replace: ")", ")</div>" }}</span>
+                              {%- elsif line_item.product.vendor == 'NRI' -%}
+                                {%- assign total_cart_qty_nri = total_cart_qty_nri | plus: line_item.quantity -%}
+                                <a href="{{ line_item.url }}" class="line-item__title link text--strong">{{ line_item.product.title }}</a>
+                              {% elsif 'BDML003NAANPC,BDML003NAANVG,BDML035NAANPC,BDML035NAANVG' contains line_item.sku %}
+                                {%- assign total_cart_qty_nri = total_cart_qty_nri | plus: line_item.quantity -%}
+                              {%- else -%}
+                                {%- assign total_cart_qty = total_cart_qty | plus: line_item.quantity -%}
+                                <a href="{{ line_item.url }}" class="line-item__title link text--strong">{{ line_item.product.title }}{% if settings.product_title_append_enabled and line_item.title contains settings.product_title_append_keyword %}<br/><div style='font-weight: normal;margin-top: 5px;'>({{ settings.product_title_append_string }})</div>{% endif %}</a>
+                              {%- endif -%}
+
+                              {%- liquid
+                                if line_item.product.type contains "Bag" or line_item.product.type contains "Tote"
+                                  assign total_cart_qty_bags = total_cart_qty_bags | plus: line_item.quantity
+                                endif
+
+                                unless line_item.product.tags contains "No Rush" or line_item.sku == 'RUSH-FULFILLMENT' or line_item.sku == 'GIFTWRAP' or line_item.sku == 'GIFTWRAPNRI'
+                                  assign total_cart_rush_qty = total_cart_rush_qty | plus: line_item.quantity
+                                endunless
+                              -%}
+
+                              {%- unless line_item.properties == blank -%}
+                                <ul class="line-item__property-list" style="list-style: none">
+                                  {%- for property in line_item.properties -%}
+                                    {%- assign first_character_in_key = property.first | truncate: 1, '' -%}
+
+                                    {%- if property.last == blank or first_character_in_key == '_' -%}
+                                      {%- continue -%}
+                                    {%- endif -%}
+
+                                    <li class="line-item__property">{{ property.last | replace: '| heart', '♥' | replace: '| Heart', '♥' | replace: '| ~heart~', '♥' }}</li>
+                                  {%- endfor -%}
+                                </ul>
+                              {%- endunless -%}
+
+                              <div class="line-item__price-list">
+                                {%- if line_item.original_price > line_item.final_price -%}
+                                  {%- if line_item.final_price == 0 -%}
+                                    {% if gift_wrap_product.id == line_item.product.id or gift_wrap_product_nri.id == line_item.product.id %}
+                                      <span class="line-item__price line-item__price--highlight" style="line-height: 1.4;"><small>Free Gift Wrapping USA Orders Only: Today Only While Supplies Last &ndash; <em>Please Remove Gift Wrap to Enable International Orders to Process</em></small></span>
+                                    {% else %}
+                                      <span class="line-item__price line-item__price--highlight">{{ 'cart.general.free' | t }}</span>
+                                    {% endif %}
+                                  {%- else -%}
+                                    <span class="line-item__price line-item__price--highlight">{{ line_item.final_price | money }}</span>
+                                  {%- endif -%}
+
+                                  <span class="line-item__price line-item__price--compare">{{ line_item.original_price | money }}</span>
+                                {%- elsif line_item.variant.compare_at_price > line_item.variant.price -%}
+                                  {%- if line_item.final_price == 0 -%}
+                                    {% if gift_wrap_product.id == line_item.product.id or gift_wrap_product_nri.id == line_item.product.id %}
+                                      <span class="line-item__price line-item__price--highlight" style="line-height: 1.4;"><small>Free Gift Wrapping USA Orders Only: Today Only While Supplies Last &ndash; <em>Please Remove Gift Wrap to Enable International Orders to Process</em></small></span>
+                                    {% else %}
+                                      <span class="line-item__price line-item__price--highlight">{{ 'cart.general.free' | t }}</span>
+                                    {% endif %}
+                                  {%- else -%}
+                                    <span class="line-item__price line-item__price--highlight">{{ line_item.final_price | money }}</span>
+                                  {%- endif -%}
+
+                                  <span class="line-item__price line-item__price--compare">{{ line_item.variant.compare_at_price | money }}</span>
+                                {%- else -%}
+                                  {%- if line_item.final_price == 0 -%}
+                                    {% if gift_wrap_product.id == line_item.product.id or gift_wrap_product_nri.id == line_item.product.id %}
+                                      <span class="line-item__price" style="line-height: 1.4;"><small>Free Gift Wrapping USA Orders Only: Today Only While Supplies Last &ndash; <em>Please Remove Gift Wrap to Enable International Orders to Process</em></small></span>
+                                    {% else %}
+                                      <span class="line-item__price">{{ 'cart.general.free' | t }}</span>
+                                    {% endif %}
+                                  {%- else -%}
+                                    <span class="line-item__price">{{ line_item.final_price | money }}</span>
+                                  {%- endif -%}
+                                {%- endif -%}
+                                {%- if line_item.product.tags contains 'Customizable' -%}
+                                  <a href="{{ line_item.url }}" class="line-item__title link" style="font-size: 10px; text-decoration: underline; margin-bottom:2px; margin-top:5px">Create New Design</a>
+                                {%- endif -%}
+                              </div>
+
+                              {%- if line_item.unit_price_measurement -%}
+                                <div class="line-item__price-info">
+                                  <div class="unit-price-measurement">
+                                    <span class="unit-price-measurement__price">{{ line_item.unit_price | money_without_trailing_zeros }}</span>
+                                    <span class="unit-price-measurement__separator">/ </span>
+
+                                    {%- if line_item.unit_price_measurement.reference_value != 1 -%}
+                                      <span class="unit-price-measurement__reference-value">{{ line_item.unit_price_measurement.reference_value }}</span>
+                                    {%- endif -%}
+
+                                    <span class="unit-price-measurement__reference-unit">{{ line_item.unit_price_measurement.reference_unit }}</span>
+                                  </div>
+                                </div>
+                              {%- endif -%}
+
+                              {%- if line_item.line_level_discount_allocations != blank -%}
+                                <ul class="line-item__discount-list">
+                                  {%- for discount_allocation in line_item.line_level_discount_allocations -%}
+                                    <li class="line-item__discount">
+                                      {%- render 'icon', icon: 'sale' -%}{{ discount_allocation.discount_application.title }} (-{{ discount_allocation.amount | money }})
+                                    </li>
+                                  {%- endfor -%}
+                                </ul>
+                              {%- endif -%}
+
+                              <div class="line-item__quantity hidden-tablet-and-up">
+                                {%- comment -%}If the product has the tag "__gift", we remove the price{%- endcomment -%}
+
+                                {%- unless line_item.product.tags contains '__gift' -%}
+                                  <div class="quantity-selector">
+                                    {%- assign allow_to_add_more = true -%}
+
+                                    {%- if line_item.variant.inventory_management and line_item.variant.inventory_policy == 'deny' and line_item.quantity == line_item.variant.inventory_quantity -%}
+                                      {%- assign allow_to_add_more = false -%}
+                                    {%- endif -%}
+
+                                    <button type="button" class="quantity-selector__button" data-action="decrease-quantity" data-href="{{ routes.cart_change_url }}?quantity={{ line_item.quantity | minus: 1 }}&id={{ line_item.key }}" data-quantity="{{ line_item.quantity | minus: 1 }}" data-line-id="{{ line_item.key }}" aria-label="{{ 'cart.items.decrease_quantity' | t }}" title="{{ 'cart.items.decrease_quantity' | t }}">{% render 'icon', icon: 'minus' %}</button>
+                                    <input aria-label="{{ 'product.form.quantity' | t }}" class="quantity-selector__value" pattern="[0-9]*" data-current-value="{{ line_item.quantity }}" data-line-id="{{ line_item.id }}" value="{{ line_item.quantity }}" size="{{ line_item.quantity | append: '' | size | at_least: 2 }}">
+                                    <button type="button" class="quantity-selector__button" data-action="increase-quantity" data-href="{{ routes.cart_change_url }}?quantity={{ line_item.quantity | plus: 1 }}&id={{ line_item.key }}" data-quantity="{{ line_item.quantity | plus: 1 }}" data-line-id="{{ line_item.key }}" {% if allow_to_add_more %}aria-label="{{ 'cart.items.increase_quantity' | t }}" title="{{ 'cart.items.increase_quantity' | t }}"{% else %}disabled="disabled" aria-label="{{ 'cart.items.no_more_stock' | t }}" data-tooltip="{{ 'cart.items.no_more_stock' | t }}" data-tooltip-position="bottom-left"{% endif %}>{% render 'icon', icon: 'plus' %}</button>
+                                  </div>
+                                {%- else -%}
+                                  <span>{{ line_item.quantity }}</span>
+                                {% endunless -%}
+
+                                <a href="{{ routes.cart_change_url }}?quantity=0&id={{ line_item.key }}" data-action="decrease-quantity" data-quantity="0" data-line-id="{{ line_item.key }}" class="line-item__quantity-remove link">{{ 'cart.items.remove' | t }}</a>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td class="line-item__quantity table__cell--center hidden-phone">
+                          {%- comment -%}If the product has the tag "__gift", we remove the price{%- endcomment -%}
+
+                          {%- unless line_item.product.tags contains '__gift' -%}
+                            <div class="quantity-selector">
+                              {%- assign allow_to_add_more = true -%}
+
+                              {%- if line_item.variant.inventory_management and line_item.variant.inventory_policy == 'deny' and line_item.quantity == line_item.variant.inventory_quantity -%}
+                                {%- assign allow_to_add_more = false -%}
+                              {%- endif -%}
+
+                              <button type="button" class="quantity-selector__button" data-action="decrease-quantity" data-href="{{ routes.cart_change_url }}?quantity={{ line_item.quantity | minus: 1 }}&id={{ line_item.key }}" data-quantity="{{ line_item.quantity | minus: 1 }}" data-line-id="{{ line_item.key }}" aria-label="{{ 'cart.items.decrease_quantity' | t }}" title="{{ 'cart.items.decrease_quantity' | t }}">{% render 'icon', icon: 'minus' %}</button>
+                              <input aria-label="{{ 'product.form.quantity' | t }}" class="quantity-selector__value" pattern="[0-9]*" data-current-value="{{ line_item.quantity }}" data-line-id="{{ line_item.id }}" value="{{ line_item.quantity }}" size="{{ line_item.quantity | append: '' | size | at_least: 2 }}">
+                              <button type="button" class="quantity-selector__button" data-action="increase-quantity" data-href="{{ routes.cart_change_url }}?quantity={{ line_item.quantity | plus: 1 }}&id={{ line_item.key }}" data-quantity="{{ line_item.quantity | plus: 1 }}" data-line-id="{{ line_item.key }}" {% if allow_to_add_more %}aria-label="{{ 'cart.items.increase_quantity' | t }}" title="{{ 'cart.items.increase_quantity' | t }}"{% else %}disabled="disabled" aria-label="{{ 'cart.items.no_more_stock' | t }}" data-tooltip="{{ 'cart.items.no_more_stock' | t }}" data-tooltip-position="bottom-left"{% endif %}>{% render 'icon', icon: 'plus' %}</button>
+                            </div>
+                          {%- else -%}
+                            <span>{{ line_item.quantity }}</span>
+                          {%- endunless -%}
+
+                          <a href="{{ routes.cart_change_url }}?quantity=0&id={{ line_item.key }}" data-id="{{ line_item.id }}" data-action="decrease-quantity" data-quantity="0" data-line-id="{{ line_item.key }}" class="line-item__quantity-remove link">{{ 'cart.items.remove' | t }}</a>
+                        </td>
+
+                        <td class="line-item__line-price table__cell--right hidden-phone">
+                          {%- if line_item.final_line_price == 0 -%}
+                            {{- 'cart.general.free' | t -}}
+                          {%- else -%}
+                            <span>{{ line_item.final_line_price | money }}</span>
+                          {%- endif -%}
+                        </td>
+                      </tr>
+                    {%- endfor -%}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+
+            {%- comment -%}
+            --------------------------------------------------------------------------------------
+            EMBROIDERY VIDEO UPSELL
+            --------------------------------------------------------------------------------------
+            {%- endcomment -%}
+
+            {% assign embroidery_video_product = all_products["your-behind-the-scenes-embroidery-video"] %}
+
+            {%- unless embroidery_video_product.empty? or embroidery_video_product.available == false -%}
+              {%- comment -%}We also have to do another check to make sure the gift wrap product is not already in the cart{%- endcomment -%}
+
+              {%- liquid
+                assign embroidery_video_in_cart = false
+                assign embroidery_video_in_cart_qty = 0
+
+                for line_item in cart.items
+                  if line_item.product_id == embroidery_video_product.id
+                    assign embroidery_video_in_cart = true
+                  elsif line_item.vendor == "James Cardenas" and line_item.variant.title == "Add Custom Text"
+                    assign embroidery_video_in_cart_qty = embroidery_video_in_cart_qty | plus: line_item.quantity
+                  endif
+                endfor
+              -%}
+
+              {%- unless total_cart_qty_embroidery == 0 or embroidery_video_in_cart -%}
+
+                <div class="card">
+                  <div class="gift-wrap">
+
+                    <div class="product-item__image-wrapper product-item__image-wrapper--with-secondary gift-wrap__image" style="width: 180px;margin: 0 20px 0 0;">
+                      <img src="{{ embroidery_video_product.featured_image | img_url: '110x', scale: 2 }}" alt="{{ embroidery_video_product.featured_image.alt }}"/>
+                    </div>
+
+                    <div class="gift-wrap__left">
+          
+                      <p class="gift-wrap__text">
+                        <span class="text--strong">{{ embroidery_video_product.title }}</span>
+
+                        <br/><span>{{ embroidery_video_product.description }}</span>
+
+                        <br/><strong style="margin-top: 0.5em;display: inline-block;">
+                        {%- if embroidery_video_product.price == 0 -%}
+                          Free
+                        {%- else -%}
+                          {{ embroidery_video_product.price | money_without_trailing_zeros }}
+                        {%- endif -%}
+                        </strong>
+                      </p>
+                    </div>
+
+                    {%- form 'product', embroidery_video_product, class: 'gift-wrap__form', id: 'gift-wrap__form' -%}
+                      <input type="hidden" name="quantity" value="{{ total_cart_qty_embroidery }}">
+                      <input type="hidden" name="id" data-sku="{{ embroidery_video_product.first_available_variant.sku }}" value="{{ embroidery_video_product.first_available_variant.id }}">
+
+                      <button type="submit" class="button button--primary">Add</button>
+                    {%- endform -%}
+
+                  </div>
+                </div>
+              {%- endunless -%}
+            {%- endunless -%}
+
+
+            {%- comment -%}
+            --------------------------------------------------------------------------------------
+            CALLIGRAPHY VIDEO UPSELL
+            --------------------------------------------------------------------------------------
+            {%- endcomment -%}
+
+            {% assign calligraphy_video_product = all_products["your-behind-the-scenes-handwritten-calligraphy-video"] %}
+
+            {%- unless calligraphy_video_product.empty? or calligraphy_video_product.available == false -%}
+              {%- comment -%}We also have to do another check to make sure the gift wrap product is not already in the cart{%- endcomment -%}
+
+              {%- liquid
+                assign calligraphy_video_in_cart = false
+                assign calligraphy_video_in_cart_qty = 0
+
+                for line_item in cart.items
+                  if line_item.product_id == calligraphy_video_product.id
+                    assign calligraphy_video_in_cart = true
+                  elsif line_item.vendor == "James Cardenas" and line_item.variant.title == "Add Custom Text"
+                    assign calligraphy_video_in_cart_qty = calligraphy_video_in_cart_qty | plus: line_item.quantity
+                  endif
+                endfor
+              -%}
+
+              {%- unless total_cart_qty_calligraphy == 0 or calligraphy_video_in_cart -%}
+
+                <div class="card">
+                  <div class="gift-wrap">
+                    <div class="gift-wrap__left">
+
+                      <p class="gift-wrap__text">
+                        <span class="text--strong">{{ calligraphy_video_product.title }}</span>
+
+                        <br/><span>{{ calligraphy_video_product.description }}</span>
+
+                        <br/><strong style="margin-top: 0.5em;display: inline-block;">
+                        {%- if calligraphy_video_product.price == 0 -%}
+                          Free
+                        {%- else -%}
+                          {{ calligraphy_video_product.price | money_without_trailing_zeros }}
+                        {%- endif -%}
+                        </strong>
+                      </p>
+                    </div>
+
+                    {%- form 'product', calligraphy_video_product, class: 'gift-wrap__form', id: 'gift-wrap__form' -%}
+                      <input type="hidden" name="quantity" value="{{ total_cart_qty_calligraphy }}">
+                      <input type="hidden" name="id" data-sku="{{ calligraphy_video_product.first_available_variant.sku }}" value="{{ calligraphy_video_product.first_available_variant.id }}">
+
+                      <button type="submit" class="button button--primary">Add</button>
+                    {%- endform -%}
+
+                  </div>
+                </div>
+              {%- endunless -%}
+            {%- endunless -%}
+
+
+            {%- comment -%}
+            --------------------------------------------------------------------------------------
+            RUSH MY ORDER
+            --------------------------------------------------------------------------------------
+            {%- endcomment -%}
+
+            {%- liquid
+              assign isTagAvailable = false
+              assign isRushOkay = false
+              assign isNonVoucher = false
+              assign isVoucher = false
+            
+              for item in cart.items
+                if item.product.tags contains 'No Rush'
+                  assign isTagAvailable = true
+                elsif item.product_id != gift_wrap_product.id and item.product_id != gift_wrap_product_nri.id
+                  assign isRushOkay = true
+                endif
+                if item.product.tags contains 'Gift Voucher'
+                  assign isVoucher = true
+                else
+                  assign isNonVoucher = true
+                endif
+                if item.properties.shipping_interval_unit_type
+                  assign subscription = true
+                endif
+              endfor
+
+              if isTagAvailable and isVoucher and isNonVoucher
+                assign isTagAvailable = false
+              endif
+            -%}
+
+            {% unless isTagAvailable and isRushOkay == false %}
+
+              {%- unless rush_order_product.empty? or rush_order_product.available == false -%}
+                {%- comment -%}We also have to do another check to make sure the rush product is not already in the cart{%- endcomment -%}
+
+                {%- assign rush_order_in_cart = false -%}
+
+                {%- for line_item in cart.items -%}
+                  {%- if line_item.product_id == rush_order_product.id -%}
+                    {%- assign rush_order_in_cart = true -%}
+                    {%- break -%}
+                  {%- endif -%}
+                {%- endfor -%}
+
+                {%- unless rush_order_in_cart -%}
+                  {%- if rush_order_product != blank -%}
+                    <div class="card">
+                      <div class="gift-wrap">
+                        <div class="gift-wrap__left">
+
+                          <img class="gift-wrap__image" src="https://cdn.shopify.com/s/files/1/0405/7704/0538/products/rush_90x_2x.jpg?v=1595814976" />
+
+                          <p class="gift-wrap__text">
+                            <strong class="text--strong">USA Rush Ordering</strong>
+
+                            {%- if rush_order_product.price == 0 -%}
+                              <br><span>Rush my order for free!</span>
+                            {%- else -%}
+                              {%- capture rush_order_product_price -%}<span>{{ rush_order_product.price | money }}</span>{%- endcapture -%}
+                              <br><span>Handling time is currently 3 business days. Order before 11pm PT, M-F and skip to the front of the line for {{ rush_order_product.price | money_without_trailing_zeros }} per bag.<br/><small style="float: right;">Does not apply for candles, embroidery, calligraphy, or international orders.</small></span>
+                            {%- endif -%}
+                          </p>
+                        </div>
+
+                        {%- form 'product', rush_order_product, class: 'gift-wrap__form' -%}
+                          <input type="hidden" name="quantity" value="{{ total_cart_rush_qty }}">
+                          <input type="hidden" name="id" data-sku="{{ rush_order_product.first_available_variant.sku }}" value="{{ rush_order_product.first_available_variant.id }}">
+
+                          <button type="submit" class="button button--primary" data-action="add-to-cart">Add</button>
+                        {%- endform -%}
+
+{{ '//cdnjs.cloudflare.com/ajax/libs/datejs/1.0/date.min.js' | script_tag }}
+<script type="text/javascript">
+
+  function updateRushDays() {
+    lineItems = Array.from(document.querySelectorAll('[data-rush="true"]'));
+
+    shippingMax = lineItems.reduce((previousValue, currentValue) => { 
+
+      previousValue.shippingStandard = currentValue.dataset.shippingStandard > previousValue.shippingStandard ? currentValue.dataset.shippingStandard : previousValue.shippingStandard;
+      previousValue.shippingExpress = currentValue.dataset.shippingExpress > previousValue.shippingExpress ? currentValue.dataset.shippingExpress : previousValue.shippingExpress;
+      previousValue.shippingFulfillment = currentValue.dataset.shippingFulfillment > previousValue.shippingFulfillment ? currentValue.dataset.shippingFulfillment : previousValue.shippingFulfillment;
+
+      return previousValue;
+
+     }, { shippingStandard: 0, shippingExpress: 0, shippingFulfillment: 0 } );
+
+    return shippingMax;
+  }
+
+  function addRushDays(shippingMax) {
+    let shippingNote = document.getElementById('rushMessage');
+
+    if (shippingNote) {
+      var shipping_standard = shippingMax.shippingStandard;
+      var shipping_express = shippingMax.shippingExpress;
+      var shipping_fulfillment = shippingMax.shippingFulfillment;
+      var shipping_rush = 1;
+
+      function getDeliveryDay(timeSpan) {
+        var deliveryDate = Date.today().addDays(timeSpan);
+        if (deliveryDate.is().saturday() || deliveryDate.is().sunday()) {
+          deliveryDate = deliveryDate.next().monday();
+        }
+        return deliveryDate;
+      }
+
+      var fromDayGround = getDeliveryDay(shipping_rush + shipping_standard - 5);
+      var toDayGround = getDeliveryDay(shipping_rush + shipping_standard);
+
+      var fromDayExpress = getDeliveryDay(shipping_rush + shipping_express - 4);
+      var toDayExpress = getDeliveryDay(shipping_rush + shipping_express);
+
+      let message = 'USPS 2-Day shipping delivers ';
+
+      if (shipping_standard) {
+        message += fromDayGround.toString('MMM dd') + ' – ';
+        message += toDayGround.toString('MMM dd') + '. ';
+      } else {
+        message = 'UPS Expedited shipping delivers';
+      }
+
+      if (shipping_express) {
+        message += 'Or choose UPS expedited shipping to deliver ';
+        message += fromDayExpress.toString('MMM dd') + ' – ';
+        message += toDayExpress.toString('MMM dd');
+      }
+
+      shippingNote.innerHTML = message;
+      shippingNote.style.width = '44%';
+
+    }
+  }
+
+  addRushDays(updateRushDays());
+</script>
+                      </div>
+                    </div>
+                  {%- endif -%}
+                {%- endunless -%}
+              {%- endunless -%}
+            {%- endunless -%}
+
+
+            {%- comment -%}
+            --------------------------------------------------------------------------------------
+            GIFT WRAP
+            --------------------------------------------------------------------------------------
+            {%- endcomment -%}
+
+            {%- liquid
+              assign isNoWrapAvailable = false
+              assign isNonVoucher = false
+              assign isVoucher = false
+
+              for item in cart.items
+                if item.product.tags contains 'No Wrap'
+                  assign isNoWrapAvailable = true
+                endif
+                if item.product.tags contains 'Gift Voucher'
+                  assign isVoucher = true
+                else
+                  assign isNonVoucher = true
+                endif
+              endfor
+
+              if isNoWrapAvailable and isVoucher and isNonVoucher
+                assign isNoWrapAvailable = false
+              endif 
+            -%}
+
+            {% unless isNoWrapAvailable  %}
+
+              {%- unless gift_wrap_product.empty? or gift_wrap_product.available == false or gift_wrap_product_nri.empty? or gift_wrap_product_nri.available == false -%}
+                {%- comment -%}We also have to do another check to make sure the gift wrap product is not already in the cart{%- endcomment -%}
+
+                {%- liquid
+                  assign gift_wrap_in_cart = false
+                  assign gift_wrap_in_cart_qty = 0
+
+                  assign gift_wrap_in_cart_nri = false
+                  assign gift_wrap_in_cart_qty_nri = 0
+
+                  for line_item in cart.items
+                    if line_item.product_id == gift_wrap_product.id
+                      assign gift_wrap_in_cart = true
+                      assign gift_wrap_in_cart_qty = line_item.quantity
+                    elsif line_item.product_id == gift_wrap_product_nri.id
+                      assign gift_wrap_in_cart_nri = true
+                      assign gift_wrap_in_cart_qty_nri = line_item.quantity
+                    endif
+                  endfor 
+                -%}
+
+                {%- unless gift_wrap_in_cart or gift_wrap_in_cart_nri -%}
+
+                  <div class="card">
+                    <div class="gift-wrap">
+                      <div class="gift-wrap__left">
+
+                        <img class="gift-wrap__image" src="https://cdn.shopify.com/s/files/1/0405/7704/0538/products/Apolis_GiftWrapping_5_90x_2x.jpg?v=1603589395" />
+
+                        <p class="gift-wrap__text">
+                          <strong class="text--strong">{% if is_vip %}Free VIP {% endif %}Apolis Signature Reusable Gift Wrapping</strong>
+
+                          {%- if is_vip -%}
+                            <br/><span>Gifting to someone special? Add complimentary gift wrapping.</span>
+                          {%- elsif gift_wrap_product.price == 0 -%}
+                            <br/><span>Free Gift Wrapping USA Orders Only: Today Only While Supplies Last &ndash; <em>Please Remove Gift Wrap to Enable International Orders to Process</em></span>
+                          {%- else -%}
+                            {%- capture gift_wrap_product_price -%}<span>{{ gift_wrap_product.price | money }}</span>{%- endcapture -%}
+                            <br><span>Gifting to someone special? Add beautiful gift wrapping for {{ gift_wrap_product_price | remove: '.00' }} per wrap.</span>
+                          {%- endif -%}
+                        </p>
+                      </div>
+
+                      <!-- <a href="javascript:;" id="button__add_giftwrap" class="button button--primary" data-action="Xadd-to-cart">Add</a>
+
+
+                      <script type="text/javascript">
+                        //.getElementById('button__add_giftwrap')
+                        document.addEventListener('click', function(event) {
+                        console.log('click button__add_giftwrap', event.target.id, event);
+                        // event.preventDefault();
+                        // event.stopImmediatePropagation();
+                        if (event.target.id == "button__add_giftwrap") {
+                          document.getElementById("gift-wrap__form").submit();
+                          document.getElementById("gift-wrap__form_nri").submit();
+                        }
+                      });
+                      </script> -->
+
+                      {%- form 'product', gift_wrap_product, class: 'gift-wrap__form', id: 'gift-wrap__form' -%}
+                        {% if wraps > 0 and wraps_nri > 0 %}
+                          <input type="hidden" name="quantity[]" value="{{ wraps }}">
+                          <input type="hidden" name="id[]" data-sku="{{ gift_wrap_product.first_available_variant.sku }}" value="{{ gift_wrap_product.first_available_variant.id }}">
+                          <input type="hidden" name="quantity[]" value="{{ wraps_nri }}">
+                          <input type="hidden" name="id[]" data-sku="{{ gift_wrap_product_nri.first_available_variant.sku }}" value="{{ gift_wrap_product_nri.first_available_variant.id }}">
+                        {% elsif wraps > 0 %}
+                          <input type="hidden" name="quantity" value="{{ wraps }}">
+                          <input type="hidden" name="id" data-sku="{{ gift_wrap_product.first_available_variant.sku }}" value="{{ gift_wrap_product.first_available_variant.id }}">
+                        {% elsif wraps_nri > 0 %}
+                          <input type="hidden" name="quantity" value="{{ wraps_nri }}">
+                          <input type="hidden" name="id" data-sku="{{ gift_wrap_product_nri.first_available_variant.sku }}" value="{{ gift_wrap_product_nri.first_available_variant.id }}">
+                        {% endif %}
+
+                        <button type="submit" class="button button--primary"  Xdata-action="Xadd-to-cart">Add</button>
+                      {%- endform -%}
+
+                     <!--  {%- form 'product', gift_wrap_product, class: 'gift-wrap__form', id: 'gift-wrap__form' -%}
+                        <input type="hidden" name="quantity" value="{{ wraps }}">
+                        <input type="hidden" name="id" data-sku="{{ gift_wrap_product.first_available_variant.sku }}" value="{{ gift_wrap_product.first_available_variant.id }}">
+
+                        <button type="submit" class="button button--secondary"  data-action="add-to-cart">Add</button>
+                      {%- endform -%}
+                      {%- form 'product', gift_wrap_product, class: 'gift-wrap__form nri', id: 'gift-wrap__form_nri' -%}
+                        <input type="hidden" name="quantity" value="{{ wraps_nri }}">
+                        <input type="hidden" name="id" data-sku="{{ gift_wrap_product_nri.first_available_variant.sku }}" value="{{ gift_wrap_product_nri.first_available_variant.id }}">
+
+                        <button type="submit" class="button button--secondary"  data-action="add-to-cart">Add</button>
+                      {%- endform -%} -->
+                    </div>
+                  </div>
+                {%- endunless -%}
+              {%- endunless -%}
+
+              {% include 'gift-wrapper' %}
+
+            {%- endunless -%}
+
+
+            {%- comment -%}
+            --------------------------------------------------------------------------------------
+            GIFT TAGS
+            --------------------------------------------------------------------------------------
+            {%- endcomment -%}
+
+
+            {%- unless note_tag_product.empty? and monogram_tag_product.empty? -%}
+
+              {%- liquid
+                assign tag_in_cart = false
+
+                for line_item in cart.items
+                  if line_item.product_id == note_tag_product.id or line_item.product_id == monogram_tag_product.id
+                    assign tag_in_cart = true
+                    break
+                  endif
+                endfor 
+              -%}
+
+              {%- unless tag_in_cart -%}
+                <div class="card">
+                  <div class="gift-wrap">
+                    <div class="gift-wrap__left">
+
+                      <img class="gift-wrap__image" src="{{ 'Apolis_Leather-Gift-Tag_Group_180x.jpg' | file_url }}" />
+
+                      <p class="gift-wrap__text">
+                        <strong class="text--strong">Personalized Leather Gift Tag</strong>
+
+                        <br><span>Add a customized, reusable, leather tag to you order.</small></span>
+                      </p>
+                    </div>
+
+                    <div>
+                      <a class="gift-wrap__link" href="{{ note_tag_product.url }}" data-variant="{{note_tag_product.selected_or_first_available_variant.id}}">Customize Note</a>
+                      <br/>
+                      <a class="gift-wrap__link" href="{{ monogram_tag_product.url }}" data-variant="{{monogram_tag_product.selected_or_first_available_variant.id}}">Customize Monogram</a>
+                    </div>
+                  </div>
+                </div>
+              {%- endunless -%}
+
+            {%- endunless -%}
+
+
+            <div id="checkout"></div>
+
+            {%- comment -%}
+            --------------------------------------------------------------------------------------
+            SHIPPING ESTIMATOR
+            --------------------------------------------------------------------------------------
+            {%- endcomment -%}
+
+            {%- if section.settings.show_shipping_estimator -%}
+              <div class="card">
+                <div class="estimate-shipping">
+                  <button type="button" class="estimate-shipping__toggle" data-action="toggle-collapsible" data-collapsible-force-overflow aria-expanded="false" aria-controls="shipping-estimator">
+                    <span class="estimate-shipping__icon">{% render 'icon', icon: 'bi-fast-delivery' %}</span>
+                    <span class="estimate-shipping__text">{{ 'cart.shipping_estimator.title' | t }}</span>
+                    <span class="estimate-shipping__arrow">{% render 'icon', icon: 'arrow-bottom' %}</span>
+                  </button>
+
+                  <div id="shipping-estimator" class="estimate-shipping__collapsible collapsible">
+                    <div class="shipping-estimator form">
+                      <div class="form__input-row">
+                        <div class="form__input-wrapper">
+                          <label for="shipping-estimator-country" class="form__label form__label--light">{{ 'cart.shipping_estimator.country' | t }}</label>
+
+                          <div class="select-wrapper select-wrapper--primary">
+                            {%- render 'icon', icon: 'arrow-bottom' -%}
+
+                            <select name="country" id="shipping-estimator-country" data-default="{{ customer.default_address.country | default: section.settings.shipping_estimator_default_country }}" required>
+                              {{- country_option_tags -}}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="form__input-wrapper" style="display: none">
+                          <label for="shipping-estimator-province" class="form__label form__label--light">{{ 'cart.shipping_estimator.province' | t }}</label>
+
+                          <div class="select-wrapper select-wrapper--primary">
+                            {%- render 'icon', icon: 'arrow-bottom' -%}
+
+                            <select name="province" id="shipping-estimator-province" data-default="{{ customer.default_address.province }}"></select>
+                          </div>
+                        </div>
+
+                        <div class="form__input-wrapper" style="max-width: 155px">
+                          <label for="shipping-estimator-zip" class="form__label form__label--light">{{ 'cart.shipping_estimator.zip_code' | t }}</label>
+                          <input type="text" name="zip" id="shipping-estimator-zip" class="form__field form__field--text" value="{{ customer.default.address.zip }}" required>
+                        </div>
+
+                        <div class="form__input-wrapper hidden-phone">
+                          <button type="button" class="form__submit button button--secondary" data-action="estimate-shipping">{{ 'cart.shipping_estimator.estimate' | t }}</button>
+                        </div>
+                      </div>
+
+                      <button type="button" class="form__submit button button--secondary hidden-tablet-and-up" data-action="estimate-shipping">{{ 'cart.shipping_estimator.estimate' | t }}</button>
+
+                      <div class="shipping-estimator__results" style="display: none;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {%- endif -%}
+
+            {%- comment -%}
+            --------------------------------------------------------------------------------------
+            RECAP
+            --------------------------------------------------------------------------------------
+            {%- endcomment -%}
+
+            <div class="cart-recap">
+              <div class="cart-recap__scroller">
+                <div class="card">
+                  <div class="card__section">
+                    {%- if cart.cart_level_discount_applications != blank -%}
+                      {%- for discount_application in cart.cart_level_discount_applications -%}
+                        <div class="cart-recap__price-line cart-recap__price-line--highlight text--pull">
+                          <span class="cart-recap__price-line-label">{{ discount_application.title }}</span>
+                          <span class="cart-recap__price-line-price">-{{ discount_application.total_allocated_amount | money }}</span>
+                        </div>
+                      {%- endfor -%}
+                    {%- endif -%}
+
+
+                    <div class="cart-recap__price-line text--pull">
+                      <span class="cart-recap__price-line-label">Shipping
+                        {% unless settings.cart_show_free_shipping_threshold -%}calculated at checkout{%- endunless -%}
+                      </span>
+                    {%- if settings.cart_show_free_shipping_threshold %}
+                      {%- if cart.total_price >= threshold_in_cents -%}
+                        <span class="cart-recap__price-line-price">FREE</span>
+                      {%- else -%}
+                        <span class="cart-recap__price-line-price">FREE <span class="money">${{ settings.cart_free_shipping_threshold }}</span>+</span>
+                      {%- endif -%}
+                    {%- endif -%}
+                    </div>
+
+                    <div class="cart-recap__price-line text--pull">
+                      <span class="cart-recap__price-line-label">{{ 'cart.general.total' | t }}</span>
+                      <span class="cart-recap__price-line-price">{{ cart.total_price | money }}</span>
+                    </div>
+
+                    {%- comment -%}
+                    To calculate the total discount, we take into account the Shopify Script (for Plus merchants), but we also add the compare at price as
+                    well as potential automatic discounts at cart level
+                    {%- endcomment -%}
+
+                    {%- liquid
+                      assign total_discount = 0
+
+                      for line_item in cart.items
+                        if line_item.final_line_price < line_item.original_line_price
+                          assign total_discount = total_discount | plus: line_item.total_discount
+                        elsif line_item.variant.compare_at_price > line_item.variant.price
+                          assign line_discount = line_item.variant.compare_at_price | minus: line_item.variant.price | times: line_item.quantity
+                          assign total_discount = total_discount | plus: line_discount
+                        endif
+                      endfor
+
+                      for discount_application in cart.cart_level_discount_applications
+                        assign total_discount = total_discount | plus: discount_application.total_allocated_amount
+                      endfor
+                    -%}
+
+                    {%- if total_discount > 0 -%}
+                      {%- capture amount_saved -%}<span>{{ total_discount | money }}</span>{%- endcapture -%}
+                      <span class="cart-recap__amount-saved">{{ 'cart.general.amount_saved_html' | t: amount_saved: amount_saved }}</span>
+                    {%- endif -%}
+
+                    <div class="cart-recap__note">
+                      <button type="button" class="cart-recap__note-button" data-action="toggle-collapsible" data-collapsible-force-overflow aria-controls="order-note" aria-expanded="false">
+                        🌿 Learn about your compostable&nbsp;mailer
+                        <span>
+                          {%- render 'icon', icon: 'arrow-bottom' -%}
+                        </span>
+                      </button>
+
+                      <div id="order-note" class="collapsible" aria-hidden="true">
+                        <div class="cart-recap__note-inner">
+                          Each Apolis shipment comes in biodegradable &amp; compostable mailer that is 100% recycled content and 90% post-consumer fibers 🌿
+                        </div>
+                      </div>
+                    </div>
+
+                    {%- if section.settings.enable_order_notes -%}
+                      <div class="cart-recap__note">
+                        <button type="button" class="cart-recap__note-button" data-action="toggle-collapsible" data-collapsible-force-overflow aria-controls="order-note" aria-expanded="false">
+                          {{- 'cart.general.note_title' | t -}}
+                          <span>
+                            <span class="cart-recap__note-edit {% if cart.note != blank %}is-visible{% endif %}">{{ 'cart.general.edit_note' | t }}</span>
+                            {%- render 'icon', icon: 'arrow-bottom' -%}
+                          </span>
+                        </button>
+
+                        <div id="order-note" class="collapsible" aria-hidden="true">
+                          <div class="cart-recap__note-inner">
+                            <textarea name="cart[note]" class="form__field form__field--textarea" rows="3" autofocus placeholder="Make it special with a gift message. Need separate messages for each gift? Let us know the details.">{{ cart.note }}</textarea>
+                            <button type="button" class="form__submit form__submit--tight button button--secondary" data-action="save-note">{{ 'cart.general.save_note' | t }}</button>
+                          </div>
+                        </div>
+                      </div>
+                    {%- endif -%}
+
+                    <div class="cart-recap__notices rte">
+
+                    </div>
+
+                    <div class="Rise__quick-apply-placeholder"></div>
+                    {% if subscription %}
+                    <style type="text/css">
+                      .Rise__quick-apply {
+                        display: none !important;
+                        visibility: hidden;
+                      }
+                    </style>
+                    {% endif %}
+
+                    {%- liquid 
+                      if settings.cart_quantity_limit > 0 and total_cart_qty_bags > settings.cart_quantity_limit
+                        assign over_quantity_limit = total_cart_qty_bags | minus: settings.cart_quantity_limit
+                      endif
+
+                      if over_quantity_limit
+                        echo '<p class="over-limit-message line-item__discount"><strong>' | append: settings.cart_quantity_limit_message | replace:  "[cart_max]",  settings.cart_quantity_limit | append: '</strong></p>'
+                      endif
+                    -%}
+
+                    {%- if over_quantity_limit -%}
+                    <style type="text/css">
+                      .over-limit-message {
+                        text-align: center;
+                        line-height: 1.4;
+                        margin: 2rem auto 0.5rem;
+                        padding: 1rem;
+                      }
+                      /*<p>In an effort to ensure our entire community experiences Surplus Market, we are only allowing "6" bags per checkout.</p>*/
+                      .cart-recap form {
+                        opacity: 0.6;
+                      }
+                    </style>
+                    {%- endif -%}
+
+                    <form method="post" action="{{ routes.cart_url }}" novalidate="novalidate" data-item-count="{{ cart.item_count }}">
+
+                      <div style="text-align:center;margin-bottom:3px; margin-top:10px; font-size: 12px"><a>Visa, Mastercard, Amex, Discover</a></div>
+
+                      <input type="hidden" name="attributes[collection_products_per_page]" value="">
+                      <input type="hidden" name="attributes[collection_layout]" value="">
+                      <button type="submit" name="checkout" class="cart-recap__checkout button button--primary button--full button--large"{%- if over_quantity_limit -%} disabled{%- endif -%}><i class="fas fa-lock-alt"></i> &nbsp;&nbsp;Pay with Credit Card</button>                      
+
+                    <!--   AFTERPAY CODE HERE -->                   
+                     <!-- {%- unless over_quantity_limit or settings.afterpay_enabled == false -%}
+                        <div style="text-align:center;margin-top:8px; margin-bottom:3px; font-size:12px"><a>– Pay in 4 Installments –</a></div>
+
+                        <button type="submit" name="checkout" class="cart-recap__checkout button button--full button--large" style="background: #C2F9E4!important"><img style="max-width: 90px; margin-top: 20px; margin-bottom: 0px" src="https://cdn.shopify.com/s/files/1/0405/7704/0538/files/Afterpay_Logo_Black.png?v=1595954664" alt="Afterpay"{%- if over_quantity_limit -%} disabled{%- endif -%}></button>
+                      {%- endunless -%} -->
+
+
+                      {% form 'cart', cart %}
+                        <!-- cart subtotal -->
+                    <div style="text-align:center;margin-top:12px; margin-bottom:3px;">
+                        {{ form | payment_terms }}
+                    </div>   
+                      {% endform %}
+        
+                      {%- unless over_quantity_limit -%}
+                        {%- comment -%}
+                        By uncommenting the additional_checkout_buttons, the express checkout buttons will be hidden from the first step of the checkout, and
+                        are rather deferred to the payment step. This is a hacky trick, but it is often requested by merchants, so I prepared the code!
+                        {%- endcomment -%}
+                        <div style="text-align:center;margin-top:8px; font-size:12px"><a>– or use Express Checkout –</a></div>
+
+                        {%- if additional_checkout_buttons -%}
+                          <div class="additional-checkout-buttons">
+                            {{ content_for_additional_checkout_buttons }}
+                          </div>
+                        {%- endif -%}
+                      {%- endunless -%}
+
+                    </form>
+                  </div>
+                </div>
+
+                {%- if section.settings.show_payment_icons -%}
+                  <div class="cart-recap__secure-payment">
+                    <p class="cart-recap__secure-payment-title">{% render 'icon', icon: 'lock-2' %} {{ 'cart.general.secure_payments' | t }}</p>
+
+                    <div class="cart-recap__secure-payment-list payment-list payment-list--centered">
+                      {% for type in shop.enabled_payment_types %}
+                        {{ type | payment_type_svg_tag: class: 'payment-list__item' }}
+                      {% endfor %}
+                    </div>
+                  </div>
+                {%- endif -%}
+              </div>
+            </div>
+          </div>
+
+          {%- comment -%}
+          --------------------------------------------------------------------------------------
+          UPSELL
+          --------------------------------------------------------------------------------------
+          {%- endcomment -%}
+
+          {%- assign upsell_collection = collections[section.settings.upsell_collection] -%}
+
+          {%- if section.blocks.size > 0 or upsell_collection != empty -%}
+            <div class="container">
+              {%- if section.blocks.size > 0 -%}
+                <div class="section">
+                  <header class="section__header">
+                    <h2 class="section__title heading h3">{{ section.settings.trust_heading | escape }}</h2>
+                  </header>
+
+                  <div class="text-with-icons text-with-icons--boxed">
+                    {%- for block in section.blocks -%}
+                      <div class="text-with-icons__item" {{ block.shopify_attributes }}>
+                        <div class="text-with-icons__icon-wrapper">
+                          {%- if block.settings.custom_icon != blank -%}
+                            <img src="{{ block.settings.custom_icon | img_url: '60x' }}" alt="{{ block.settings.custom_icon.alt | escape }}">
+                          {%- else -%}
+                            {%- render 'icon', icon: block.settings.icon, stroke_width: 1.5 -%}
+                          {%- endif -%}
+                        </div>
+
+                        {%- if block.settings.title != blank or block.settings.content != blank -%}
+                          <div class="text-with-icons__content-wrapper">
+                            {%- if block.settings.title != blank -%}
+                              <p class="text-with-icons__title text--strong">{{ block.settings.title }}</p>
+                            {%- endif -%}
+
+                            {%- if block.settings.content != blank -%}
+                              <div class="text-with-icons__content">
+                                {{ block.settings.content | replace: 'sms_number', settings.sms_number | replace: 'support_email', settings.support_email }}
+                              </div>
+                            {%- endif -%}
+                          </div>
+                        {%- endif -%}
+                      </div>
+                    {%- endfor -%}
+                  </div>
+                </div>
+              {%- endif -%}
+
+              {%- if upsell_collection != empty -%}
+                {%- comment -%}We iterate through all the products, by making sure to remove those that are already in the cart{%- endcomment -%}
+
+                {%- liquid
+                  capture upsell_products
+                    assign upsell_products_count = 0
+
+                    for product in upsell_collection.products
+                      unless product.available
+                        continue
+                      endunless
+
+                      assign include_product = true
+
+                      for line_item in cart.items
+                        if line_item.product_id == product.id
+                          assign include_product = false
+                          break
+                        endif
+                      endfor
+
+                      if include_product
+                        render 'product-item', product: product, show_add_to_cart: true, grid_classes: '1/3--lap 1/3--desk 1/4--wide'
+
+                        comment
+                          'Check how much products we have shown and limit'
+                        endcomment
+                        assign upsell_products_count = upsell_products_count | plus: 1
+
+                        if upsell_products_count >= section.settings.upsell_products_count
+                          break
+                        endif
+                      endif
+                    endfor
+                  endcapture
+                -%}
+
+                {%- if upsell_products != blank -%}
+                  {%- capture section_settings -%}
+                  {
+                    "stackable": false,
+                    "layout": "vertical"
+                  }
+                  {%- endcapture -%}
+
+                  <div class="section" data-section-id="{{ section.id }}-upsell" data-section-type="featured-collection" data-section-settings='{{ section_settings }}'>
+                    <header class="section__header">
+                      <h2 class="section__title heading h3">{{ section.settings.upsell_heading | escape }}</h2>
+                    </header>
+
+                    <div class="scroller">
+                      <div class="scroller__inner">
+                        <div class="product-list product-list--vertical product-list--scrollable">
+                          {{ upsell_products }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {%- comment -%}
+                  --------------------------------------------------------------------------------------
+                  QUICK VIEW CONTAINER
+                  --------------------------------------------------------------------------------------
+                  {%- endcomment -%}
+
+                  <div id="modal-quick-view-{{ section.id }}" class="modal" aria-hidden="true">
+                    <div class="modal__dialog modal__dialog--stretch" role="dialog">
+                      <div class="modal__loader">
+                        {%- render 'icon', icon: 'search-loader' -%}
+                      </div>
+
+                      <div class="modal__inner"></div>
+                    </div>
+                  </div>
+                {%- endif -%}
+              {%- endif -%}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {%- endif -%}
+</section>
+
+
+  {% comment %}
+  ------------------------------------------------------------------------------
+  DISCOUNT TIERS
+  ------------------------------------------------------------------------------
+  {% endcomment %}
+
+<div id="modal-discounts" class="modal" aria-hidden="true">
+   <div class="modal__dialog" role="dialog">
+      <header class="modal__header">
+         <h3 class="modal__title heading h2">Need a group gift?</h3>
+         <button class="modal__close link" data-action="close-modal">{%- render 'icon', icon: 'close' -%}</button>
+      </header>
+      <div class="modal__content modal__content--ios-push" style="padding-top:0px;">
+         <div>
+            <p style="margin-top:10px;margin-bottom:10px">Have an event or brand that needs tons of bags? Save big by adding more to your cart. Change any item's quantity to the desired threshold and we'll automatically apply the discount. Discounts can be combined across all bags, even with different customizations, sizes, or colors.</p>
+            <hr class="card__separator">
+            <table width="100%">
+               <tbody>
+                  <tr>
+                    <td style="width: 42%;"><strong>Bags</strong></td>
+                    <td style="width: 58%;"><strong>Save</strong></td>
+                    {% comment %}<td style="width: 83.853%;"><strong>Masks</strong></td>{% endcomment %}
+                  </tr>
+                  {% comment %}<tr>
+                     <td style="width: 42%;">Buy 3</td>
+                     <td style="width: 22.147%;">5%</td>
+                     <td style="width: 83.853%;">4%</td>
+                  </tr>
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 5</span>
+                     </td>
+                     <td style="width: 22.147%;">11%</td>
+                     <td style="width: 83.853%;">
+                        <span>8%</span>
+                     </td>
+                  </tr>
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 10</span>
+                     </td>
+                     <td style="width: 22.147%;">14%</td>
+                     <td style="width: 83.853%;">
+                        <span>13%</span>
+                     </td>
+                  </tr>
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 20</span>
+                     </td>
+                     <td style="width: 22.147%;">18%</td>
+                     <td style="width: 83.853%;">
+                        <span>17%</span>
+                     </td>
+                  </tr>
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 30</span>
+                     </td>
+                     <td style="width: 22.147%;">20%</td>
+                     <td style="width: 83.853%;">
+                        <span>21%</span>
+                     </td>
+                  </tr>
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 40</span>
+                     </td>
+                     <td style="width: 22.147%;">22%</td>
+                     <td style="width: 83.853%;">
+                        <span>25%</span>
+                     </td>
+                  </tr>
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 50+</span>
+                     </td>
+                     <td style="width: 22.147%;">25%</td>
+                     <td style="width: 83.853%;">
+                        <span>29%</span>
+                     </td>
+                  </tr>{% endcomment %}
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 30</span>
+                     </td>
+                     <td style="width: 58%;"> 15%</td>
+                     {% comment %}<td style="width: 83.853%;">15%</td>{% endcomment %}
+                  </tr>
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 40</span>
+                     </td>
+                     <td style="width: 58%;"> 18%</td>
+                     {% comment %}<td style="width: 83.853%;">18%</td>{% endcomment %}
+                  </tr>
+                  <tr>
+                     <td style="width: 42%;">
+                        <span>Buy 50+</span>
+                     </td>
+                     <td style="width: 58%;"> 20%</td>
+                     {% comment %}<td style="width: 83.853%;">20%</td>{% endcomment %}
+                  </tr>
+               </tbody>
+            </table>
+            <hr class="card__separator">
+           <p style="margin-top:10px;margin-bottom:10px">For even larger orders, please <a href="/pages/contact-us"><u>contact us</u></a></p>
+
+         </div>
+      </div>
+   </div>
+</div>
+
+{% schema %}
+{
+  "name": "Cart page",
+  "max_blocks": 3,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Those settings are only applicable when the cart contains at least one product."
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_order_notes",
+      "label": "Enable order notes",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_payment_icons",
+      "label": "Show payment icons",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Gift wrap"
+    },
+    {
+      "type": "paragraph",
+      "content": "Gift wrap needs to be set up as a product. [Read more](https://support.maestrooo.com/article/190-cart-set-up-a-gift-wrap-product)"
+    },
+    {
+      "type": "product",
+      "id": "gift_wrap_product",
+      "label": "Product"
+    },
+    {
+      "type": "text",
+      "id": "gift_wrap_text",
+      "label": "Text",
+      "default": "Do you want a gift wrap?"
+    },
+    {
+      "type": "text",
+      "id": "gift_wrap_button",
+      "label": "Button",
+      "default": "Add a gift wrap"
+    },
+    {
+      "type": "checkbox",
+      "id": "giftwrap_auto_add",
+      "label": "Auto add",
+      "default": false,
+      "info": "Automatically add gift wrapping to cart."
+    },
+    {
+      "type": "header",
+      "content": "Shipping estimator"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_shipping_estimator",
+      "label": "Show shipping rates calculator",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "shipping_estimator_default_country",
+      "label": "Default country",
+      "info": "If the customer is logged in, the country of their shipping address will be used.",
+      "default": "United States"
+    },
+    {
+      "type": "text",
+      "id": "trust_heading",
+      "label": "Heading",
+      "default": "Our guarantees"
+    },
+    {
+      "type": "header",
+      "content": "Upsell"
+    },
+    {
+      "type": "paragraph",
+      "content": "Show additional products to encourage customers to buy more."
+    },
+    {
+      "type": "text",
+      "id": "upsell_heading",
+      "label": "Heading",
+      "default": "Complete your cart"
+    },
+    {
+      "type": "collection",
+      "id": "upsell_collection",
+      "label": "Collection",
+      "info": "Products already in cart or sold out will be hidden."
+    },
+    {
+      "type": "range",
+      "id": "upsell_products_count",
+      "label": "Products to show",
+      "min": 4,
+      "max": 12,
+      "step": 4,
+      "default": 4
+    }
+  ],
+  "blocks": [
+    {
+      "name": "Trust text",
+      "type": "trust",
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "bi-add-to-cart",
+              "label": "Add to cart",
+              "group": "Shop"
+            },
+            {
+              "value": "bi-gift-wrap",
+              "label": "Gift wrap",
+              "group": "Shop"
+            },
+            {
+              "value": "bi-gift-box",
+              "label": "Gift box",
+              "group": "Shop"
+            },
+            {
+              "value": "bi-heart",
+              "label": "Heart",
+              "group": "Shop"
+            },
+            {
+              "value": "bi-ecology",
+              "label": "Ecology",
+              "group": "Shop"
+            },
+            {
+              "value": "bi-plant",
+              "label": "Plant",
+              "group": "Shop"
+            },
+            {
+              "value": "bi-shop",
+              "label": "Shop",
+              "group": "Shop"
+            },
+            {
+              "value": "bi-shop-pin",
+              "label": "Shop with pin",
+              "group": "Shop"
+            },
+            {
+              "value": "bi-alert",
+              "label": "Alert",
+              "group": "Communication"
+            },
+            {
+              "value": "bi-chat",
+              "label": "Chat",
+              "group": "Communication"
+            },
+            {
+              "value": "bi-comment",
+              "label": "Comment",
+              "group": "Communication"
+            },
+            {
+              "value": "bi-customer-support",
+              "label": "Customer support",
+              "group": "Communication"
+            },
+            {
+              "value": "bi-email",
+              "label": "Email",
+              "group": "Communication"
+            },
+            {
+              "value": "bi-network",
+              "label": "Network",
+              "group": "Communication"
+            },
+            {
+              "value": "bi-newsletter",
+              "label": "Newsletter",
+              "group": "Communication"
+            },
+            {
+              "value": "bi-love",
+              "label": "Love",
+              "group": "Communication"
+            },
+            {
+              "value": "bi-phone",
+              "label": "Phone",
+              "group": "Communication"
+            },
+            {
+              "value": "bi-share",
+              "label": "Share",
+              "group": "Communication"
+            },
+            {
+              "value": "bi-delivery",
+              "label": "Delivery",
+              "group": "Delivery"
+            },
+            {
+              "value": "bi-fast-delivery",
+              "label": "Fast delivery",
+              "group": "Delivery"
+            },
+            {
+              "value": "bi-globe-europe",
+              "label": "Globe - Europe",
+              "group": "Delivery"
+            },
+            {
+              "value": "bi-returns",
+              "label": "Returns",
+              "group": "Delivery"
+            },
+            {
+              "value": "bi-time",
+              "label": "Time",
+              "group": "Delivery"
+            },
+            {
+              "value": "bi-secure-payment",
+              "label": "Secure payment",
+              "group": "Security"
+            },
+            {
+              "value": "bi-mobile-payment",
+              "label": "Mobile payment",
+              "group": "Security"
+            },
+            {
+              "value": "bi-credit-card",
+              "label": "Credit card",
+              "group": "Security"
+            },
+            {
+              "value": "bi-shield",
+              "label": "Shield",
+              "group": "Security"
+            }
+          ],
+          "default": "bi-customer-support"
+        },
+        {
+          "type": "image_picker",
+          "id": "custom_icon",
+          "label": "Custom icon",
+          "info": "60 x 60px .png with transparency recommended"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Heading",
+          "default": "Your title"
+        },
+        {
+          "type": "text",
+          "id": "content",
+          "label": "Content",
+          "default": "Short content about your store"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
+
+<script>
+  loadPreview = function () {
+    var cart_items_customized_link = document.getElementsByClassName(
+      "cart-item-customized-link"
+    );
+
+    for (var i = 0; i < cart_items_customized_link.length; i++) {
+      var cart_item_customized_link = cart_items_customized_link[i];
+      var customization_words =
+        cart_item_customized_link.getAttribute("data-customization");
+      var final_customization_words = customization_words.replaceAll("Your text: ", "").replaceAll(" | ", "__");
+      
+      var customization_params =
+        cart_item_customized_link.getAttribute("data-url_params");
+      
+      var final_img_url =
+        customizer_base_url +
+        customization_params.substring(1) +
+        "&words=" +
+        btoa(unescape(encodeURIComponent(final_customization_words)));
+
+      var product_id = cart_item_customized_link.getAttribute("data-product-id");
+
+      if (product_id == 6611164528826) product_id = 6606176813242;
+      else if (product_id == 6611237372090) product_id = 6611228098746;
+
+      cart_item_customized_link.src = final_img_url;
+      cart_item_customized_link.dataset.src = final_img_url;
+      cart_item_customized_link.style.opacity = 1;
+    }
+  }
+
+  // document.addEventListener("theme:loading:end", (event) => {
+  //   console.log("theme:loading:end", event);
+  //   loadPreview();
+  // });
+
+  document.addEventListener("cart:rerendered", (event) => {
+    // console.log("cart:rerendered", event, cart);
+    // console.log("cart:rerendered", event, "wrap_qty: {{wrap_qty}} | total_cart_qty: {{total_cart_qty}}", "rush_qty: {{rush_qty}} | total_cart_rush_qty: {{total_cart_rush_qty}}");
+    loadPreview();
+  });
+
+  loadPreview();
+</script>
+
+{% if wrap_qty != wraps and wrap_qty > 0 %}
+
+  <form action="{{ routes.cart_change_url }}" method="get" id="gift-wrap-adjuster__form">
+  <input type="hidden" name="quantity" value="{{ wraps }}">
+  <input type="hidden" name="id" value="{{ wrap_key }}">
+
+  <button style="display:none" type="submit" class="button button--secondary"  data-action="add-to-cart">Add</button>
+  </form>
+  <script>
+    document.getElementById("gift-wrap-adjuster__form").submit();
+  </script>
+
+{% endif %}
+
+{% if wrap_qty_nri != wraps_nri and wrap_qty_nri > 0 %}
+
+  <form action="{{ routes.cart_change_url }}" method="get" id="gift-wrap-adjuster_nri__form">
+  <input type="hidden" name="quantity" value="{{ wraps_nri }}">
+  <input type="hidden" name="id" value="{{ wrap_key_nri }}">
+
+  <button style="display:none" type="submit" class="button button--secondary"  data-action="add-to-cart">Add</button>
+  </form>
+  <script>
+    document.getElementById("gift-wrap-adjuster_nri__form").submit();
+  </script>
+
+{% endif %}
+
+{% if rush_qty != total_cart_rush_qty and rush_qty > 0 %}
+
+  <form action="{{ routes.cart_change_url }}" method="get" id="rush-adjuster__form">
+  <input type="hidden" name="quantity" value="{{ total_cart_rush_qty }}">
+  <input type="hidden" name="id" value="{{ rush_key }}">
+
+  <button style="display:none" type="submit" class="button button--secondary"  data-action="add-to-cart">Add</button>
+  </form>
+  <script>
+    document.getElementById("rush-adjuster__form").submit();
+  </script>
+
+{% endif %}

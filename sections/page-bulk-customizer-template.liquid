@@ -1,0 +1,163 @@
+<!-- CSS -->
+<link rel="stylesheet" href="https://unpkg.com/flickity@2/dist/flickity.min.css">
+
+{% assign tag_product = false %}
+{% assign tag_product = all_products.leather-gift-tag-with-note %}
+
+{% capture 'allMetaFields' %}
+    {
+
+        {% paginate collections["all-customizable-products"].products by 250 %}
+        {% for product in collections["all-customizable-products"].products %}
+
+            "{{ product.handle }}" : {
+                customizer_settings : {{ product.metafields.customizer_web | json }},
+                total_fields: {{product.metafields.customizer.total_fields | default: 0}},
+                force_caps: {{product.metafields.customizer['force_caps'] | json}},
+				force_lower_caps: {{product.metafields.customizer['force_lower_caps'] | json}},
+				character_limit: {{product.metafields.customizer['character_limit'] | json}},
+
+                {% assign tag_products = product.metafields.custom.tag_products.value %}
+                {% assign tag_product = false %}
+                {% for tag_product in tag_products %}
+                	{% assign tag_product = tag_product %}
+                {% endfor %}
+
+               {% unless tag_product == false %}
+                 {% for variant in tag_product.variants %}
+                   {% unless variant.title == "Add Custom Text" %}
+                     tag_variant: {{ variant.id }},
+                     tag_variant_price: {{ variant.price }},
+                     {% endunless %}
+                  
+                   {% endfor %}
+            
+                  tag_product: 1,
+                  tag_customizer_settings : {{ tag_product.metafields.customizer_web | json }},
+                  tag_total_fields: {{tag_product.metafields.customizer.total_fields | default: 0}},
+                  tag_force_caps: {{tag_product.metafields.customizer['force_caps'] | json}},
+                  tag_force_lower_caps: {{tag_product.metafields.customizer['force_lower_caps'] | json}},
+                  tag_character_limit: {{tag_product.metafields.customizer['character_limit'] | json}},
+                {% endunless %}
+            },
+        
+        {% endfor %}
+        {% endpaginate %}
+    }
+{% endcapture %}
+
+<script>
+
+  var allProductsMetafields = {{allMetaFields}};
+   console.log(allProductsMetafields);
+</script>
+
+<!-- JavaScript -->
+<script src="https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js"></script>
+<div class="container container--narrow">
+  <header class="page__header page__header--stack page__header--centered">
+    <h1 class="page__title heading h1">Bulk Customizer</h1>
+
+    {%- if page.content != blank -%}
+      <div class="page__description rte" id="product-name">
+      Personalize Multiple Bags
+      </div>
+    {%- endif -%}
+  </header>
+</div>
+<script src="{{ 'bulk_customizer.js' | asset_url }}" defer></script>
+
+<div class="container container--flush">
+  <div class="row" style="border-bottom: 1px solid var(--border-color);">
+    <div class="col col-span-2" style="text-align:center;" id="img-block">
+      <img src="" id="customized_image" style="max-width:200px;" />
+      <br />
+      <span id="bulk-image-label">Previewing Bag 1 </span>
+      <br />
+      <img id="bulk-image-loader" style="display: none;max-width:25px;" src="{{ 'loading.gif' | asset_url }}" />
+    </div>
+    <div class="col col-span-10">
+      <div id="bulk-customizer-main"></div>
+      <div class="row nested wide-fit " id="bulk-summary-row" >
+        <div class="col col-span-1 grid__cell--middle hidden-phone" style="text-align:left;"></div>
+   		<div class="col col-span-2 hidden-phone"></div>
+        <div class="col col-span-2 hidden-phone"></div>
+        <div class="col col-span-2 hidden-phone"></div>
+        <div class="col col-span-1 grid__cell--middle hidden-tablet-and-up" >
+        </div>
+        <div class="col col-span-1 grid__cell--middle" style="text-align:center;">
+          <span id="total-qty"></span>
+        </div>
+        <div class="col col-span-1 grid__cell--middle" style="text-align:right;">
+          <span id="total-price"></span>
+        </div>
+        
+      </div>
+        <div style="text-align:center;" class="hidden-tablet-and-up">
+        <a  onclick="addAnotherBag(event)" class="button button--featured add-another-bag" href="" style=""  class="navigable">Customize Another Bag</a>
+      </div>
+      <div class="row nested wide-fit ">
+        
+        
+         <div class="col  col-span-1 grid__cell--middle hidden-phone" style="text-align:left;"></div>
+   		<div class="col  col-span-2 hidden-phone"></div>
+        <div class="col col-span-2 hidden-phone"></div>
+        <div class="col col-span-1 grid__cell--middle hidden-phone"></div>
+        <div class="col col-span-2 grid__cell--middle hidden-phone" style="text-align:center;">
+
+        <a onclick="addAnotherBag(event)" class="button button--featured add-another-bag" href="" style=""  class="navigable">Customize Another Bag</a>
+        </div>
+        <div class="col col-span-1 grid__cell--middle" style="text-align:right;">
+          <button type="submit" style="float:right;" id="bulk-add-to-cart" class="button button--primary navigable">Add All to Cart</button> <br />
+          
+        </div>
+        
+     
+      </div>
+    
+    </div>
+  </div>
+</div>
+
+<style>
+  .flickity-prev-next-button {
+    top: 100% !important;;
+    width: 30px !important;;
+    height:30px !important;;
+    opacity:1 !important;
+  }
+
+.flickity-button {
+	background: #000000 !important;;
+}
+
+.flickity-prev-next-button .flickity-button-icon {
+	left: 20% !important;
+}
+
+.form__field {
+	height: 40px;
+}
+
+.bulk-customizer-carousel-slide .main-row  {
+  margin-top:15px;
+}
+.main-row .col {
+  padding-bottom:0px;
+  margin-bottom:0px;
+}
+</style>
+
+{% schema %}
+  {
+    "name": "Section name",
+    "settings": []
+  }
+{% endschema %}
+
+{% stylesheet %}
+{% endstylesheet %}
+
+{% javascript %}
+
+{% endjavascript %}

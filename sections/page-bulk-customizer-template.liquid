@@ -4,7 +4,7 @@
 {% assign tag_product = false %}
 {% assign tag_product = all_products.leather-gift-tag-with-note %}
 
-{% capture 'allMetaFields' %}
+{% capture allMetaFields %}
     {
 
         {% paginate collections["all-customizable-products"].products by 250 %}
@@ -161,3 +161,13 @@
 {% javascript %}
 
 {% endjavascript %}
+{% comment %}
+
+This file has been rewritten to preserve the original behavior.
+
+---
+Changes:
+- from: "{% capture 'allMetaFields' %}"
+  to: "{% capture allMetaFields %}"
+  position: 197..224
+{% endcomment %}

@@ -574,7 +574,7 @@
           <input type="hidden" name="id[]" data-sku="{{ bundle_variant.sku }}" value="{{ bundle_variant.id }}">
         {% endfor %}
         {%- if product.id == 6608495640762 -%}
-          {% render 'living-collection-subscription' with script: true %}
+          {% render 'living-collection-subscription' with script, script: true %}
         {%- endif -%}
 
       {%- else -%}
@@ -1215,3 +1215,13 @@ DISCOUNT TIERS
     </div>
   </div>
 </div>
+{% comment %}
+
+This file has been rewritten to preserve the original behavior.
+
+---
+Changes:
+- from: "{% render 'living-collection-subscription' with script: true %}"
+  to: "{% render 'living-collection-subscription' with script, script: true %}"
+  position: 32054..32125
+{% endcomment %}
